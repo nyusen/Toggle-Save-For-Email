@@ -2,9 +2,16 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy requirements first to leverage Docker cache
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY ./pyproject.toml ./pyproject.toml 
+COPY ./uv.lock ./uv.lock 
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --inexact --no-dev
+
+# Place executables in the environment at the front of the path
+ENV PATH="/code/.venv/bin:$PATH" \
+    UV_COMPILE_BYTECODE=1 \
+    VIRTUAL_ENV=/code/.venv
 
 # Copy the rest of the application
 COPY ./app .

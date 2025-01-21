@@ -1,11 +1,12 @@
 # Email Training Saver Backend
 
-This is a FastAPI-based backend service that handles saving emails to Azure Blob Storage. It's containerized using Docker for easy deployment.
+This is a FastAPI-based backend service that handles saving emails to Azure Blob Storage. It's containerized using Docker for easy deployment and uses uv for fast, reliable Python package management.
 
 ## Prerequisites
 
 - Docker and Docker Compose
 - Azure Storage Account and Container
+- Python 3.11+ (for local development)
 
 ## Setup
 
@@ -42,15 +43,16 @@ The API will be available at `http://localhost:8000`
 
 To run the service without Docker:
 
-1. Create a virtual environment:
+1. Install uv (if not already installed):
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install uv
 ```
 
-2. Install dependencies:
+2. Create a virtual environment and install dependencies:
 ```bash
-pip install -r requirements.txt
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install .
 ```
 
 3. Run the service:
@@ -63,3 +65,11 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 When the service is running, you can access the auto-generated API documentation at:
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
+
+## Why uv?
+
+We use uv for package management because it offers several advantages:
+- Much faster package installation and dependency resolution
+- Reliable and reproducible builds
+- Built-in virtual environment management
+- Compatible with standard Python tooling
