@@ -1,14 +1,12 @@
 .PHONY: help install dev build run clean test lint
 
 CWD = $(shell pwd)
+ACR_NAME_DEV = evieacrmldev01
+ACR_NAME_PROD = evieacrmlprd01
+ACCT_NAME_DEV = EVIE-DataLandingZone-Dev
+ACCT_NAME_PROD = EVIE-DataLandingZone-Prod
+export VERSION = 0.1.0
 export DOCKER_IMAGE_NAME_BASE = backend-email-saver-backend
-
-help: ## Show this help message
-	@echo 'Usage:'
-	@echo '  make <target>'
-	@echo ''
-	@echo 'Targets:'
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 az_login_local:
 	-mkdir .azure-for-docker
@@ -16,9 +14,6 @@ az_login_local:
 
 test_run:
 	docker run $(DOCKER_IMAGE_NAME_BASE):latest python
-
-dev: ## Run the development server
-	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 build: ## Build Docker image
 	docker build -t $(DOCKER_IMAGE_NAME_BASE):latest .
@@ -35,21 +30,20 @@ docker-compose-build: ## Run with Docker Compose
 docker-compose-build-detach: ## Run with Docker Compose in detached mode
 	docker-compose up --build -d
 
-clean: ## Clean up generated files and Docker artifacts
-	find . -type d -name "__pycache__" -exec rm -r {} +
-	find . -type f -name "*.pyc" -delete
-	find . -type f -name "*.pyo" -delete
-	find . -type f -name "*.pyd" -delete
-	find . -type f -name ".coverage" -delete
-	find . -type d -name "*.egg-info" -exec rm -r {} +
-	find . -type d -name "*.egg" -exec rm -r {} +
-	find . -type d -name ".pytest_cache" -exec rm -r {} +
-	find . -type d -name ".mypy_cache" -exec rm -r {} +
-	docker-compose down --rmi all --volumes --remove-orphans
+build_acr_dev:
+	az account set --subscription "$(ACCT_NAME_DEV)"
+	az acr login -n $(ACR_NAME_DEV)
+	docker build -f ./Dockerfile -t $(ACR_NAME_DEV).azurecr.io/corpus-collector-backend:$(VERSION) -t $(ACR_NAME_DEV).azurecr.io/corpus-collector-backend:latest --target deployment .
+	docker push $(ACR_NAME_DEV).azurecr.io/corpus-collector-backend:$(VERSION)
+	docker push $(ACR_NAME_DEV).azurecr.io/corpus-collector-backend:latest
 
-test: ## Run tests
-	pytest
+run_from_acr:
+	docker pull $(ACR_NAME_DEV).azurecr.io/corpus-collector-backend:latest
+	docker run -p 8502:8502 --env-file .env $(ACR_NAME_DEV).azurecr.io/corpus-collector-backend:latest
 
-lint: ## Run linters
-	ruff check .
-	mypy .
+
+deploy_aks_dev:
+	kubectl config use-context evie-aks-mlinf-dev-01-admin
+	kubectl config set-context --current --namespace=pulse
+	helm upgrade corpus-collector-backend _charts/backend --install --values _charts/backend/values.dev.yaml
+

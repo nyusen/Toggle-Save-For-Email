@@ -3,17 +3,15 @@
 
 replicaCount: 3
 image:
-  repository: evieacrmldev01.azurecr.io/arsenal-hospitality-backend
+  repository: evieacrmldev01.azurecr.io/corpus-collector-backend
   pullPolicy: Always
-  tag: "0.28.0-alpha.6"
+  tag: "0.1.0"
   env:
     - name: APP_VERSION
-      value: "0.28.0-alpha.6"
+      value: "0.0.1"
   envFrom:
-    - secretRef:
-        name: arsenal-hospitality-backend-creds
     - configMapRef:
-        name: arsenal-hospitality-backend-config
+        name: corpus-collector-backend-config
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -54,11 +52,11 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     nginx.ingress.kubernetes.io/enable-ssl-chain-completion: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
-  pathPrefix: /arsenal-hospitality/api
+  pathPrefix: /corpus-collector/api
   hosts:
     - host: ml-inf-svc-dev.eventellect.com
       paths:
-        - path: /arsenal-hospitality/api(/|$)(.*)
+        - path: /corpus-collector/api(/|$)(.*)
           pathType: ImplementationSpecific
   tls:
     - secretName: ingress-ev-wildcard-tls
@@ -110,8 +108,8 @@ tolerations: []
 affinity: {}
 deploymentLabels:
   azure.workload.identity/use: "true"
-  app-version: "0.28.0-alpha.6"
-serviceAccountName: primary-price-recs-wi-sa
+  app-version: "0.0.1"
+serviceAccountName: argo-workflow
 configs:
-  ENV: "dev"
-  TJT_BASE_URL: "https://tjhub3.com/hospitality_api_arsenal_staging"
+  BLOB_URL: "https://eviestrgstrdev01.blob.core.windows.net"
+  AZURE_STORAGE_CONTAINER_NAME: "corpus-collector-data"

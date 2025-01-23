@@ -18,7 +18,7 @@ cp .env.example .env
 2. Update the `.env` file with your Azure Storage credentials:
 ```
 AZURE_STORAGE_CONNECTION_STRING=your_connection_string_here
-AZURE_STORAGE_CONTAINER_NAME=email-training-data
+AZURE_STORAGE_CONTAINER_NAME=corpus-collector-data
 ```
 
 ## Running the Service

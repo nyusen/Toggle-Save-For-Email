@@ -32,7 +32,7 @@ class EmailData(BaseModel):
     recipients: List[str]
     timestamp: str
 
-@app.post("/api/save-email")
+@app.post("/save-email")
 async def save_email(email_data: EmailData):
     try:
         # Create a unique filename using timestamp
@@ -49,10 +49,6 @@ async def save_email(email_data: EmailData):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/health")
+@app.get("/health")
 async def health_check():
     return {"status": "healthy"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
