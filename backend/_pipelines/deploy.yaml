@@ -1,0 +1,393 @@
+# Important thing to note:
+# Condition is based off stage attempts. If a stage attempt is anything other than one, then no git actions are taken.
+# This means that commits can become unsynced if a dev stage is run twice then prd stage is run because the prd stage would get its attempt incremented to 2 despite not being run.
+
+trigger:
+  branches:
+    include:
+      - develop
+  paths:
+    include:
+      - hospitality_app/**
+    exclude:
+      - README.md
+
+name: 'Build and Deployment'
+
+pool:
+  name: ds-pipeline-pool
+
+variables:
+  - group: ds-service-connection-group
+  # - name: DOCKER_BUILDKIT
+  #   value: 1
+  
+stages:
+  - stage: Build_Backend
+    variables:
+      - group: ds-group-dev
+    jobs:
+      - job: Build
+        steps:
+          - checkout: self
+            fetchDepth: 0
+            persistCredentials: true
+            clean: true
+          # run git version
+          - template: templates/git-version.yaml
+          # - task: Docker@2
+          #   displayName: Login to ACR
+          #   inputs:
+          #     command: login
+          #     containerRegistry: $(repoName)
+          #     azureSubscription: $(DevServiceConnection)
+          # - task: Docker@2
+          #   displayName: Build
+          #   inputs:
+          #     command: build
+          #     repository: sq_audit_backend
+          #     Dockerfile: backend/api/Dockerfile
+          #     tags: $(GitVersion.SemVer)
+          #     arguments: --target deployment
+          # - task: Docker@2
+          #   displayName: Push
+          #   inputs:
+          #     command: push
+          #     repository: sq_audit_backend
+          #     Dockerfile: backend/api/Dockerfile
+          #     tags: $(GitVersion.SemVer)
+          # - task: Docker@2
+          #   displayName: Logout to ACR
+          #   inputs:
+          #     command: logout
+          #     containerRegistry: $(repoName)
+          # build docker image
+          - task: AzureCLI@2
+            displayName: 'Build Docker image'
+            continueOnError: false
+            inputs:
+              azureSubscription: $(DevServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+                cd hospitality_app/backend/api
+                az acr build \
+                  -f ./Dockerfile \
+                  --target deployment \
+                  -t arsenal-hospitality-backend:$(GitVersion.SemVer) \
+                  -r $(RepoName) \
+                  .
+                cd ../../..
+          # create output variables to share between stages
+          - bash: |
+              echo "Setting git version variables."
+              echo "Semantic Version dev: $(GitVersion.SemVer)"
+              echo "Semantic Version prd: $(GitVersion.MajorMinorPatch)"
+              echo "##vso[task.setvariable variable=devVersion;isOutput=true]$(GitVersion.SemVer)"
+              echo "##vso[task.setvariable variable=prdVersion;isOutput=true]$(GitVersion.MajorMinorPatch)"
+            name: buildStageOutput
+  - stage: Build_Frontend_DEV
+    dependsOn: []
+    variables:
+      - group: ds-group-dev
+    jobs:
+      - job: Build
+        steps:
+          - checkout: self
+            fetchDepth: 0
+            persistCredentials: true
+            clean: true
+          # run git version
+          - template: templates/git-version.yaml
+          # build docker image
+          - task: AzureCLI@2
+            displayName: 'Build Docker image'
+            continueOnError: false
+            inputs:
+              azureSubscription: $(DevServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+                cd hospitality_app/frontend
+                az acr build \
+                  -f ./Dockerfile.streamlit \
+                  -t arsenal-hospitality-frontend:$(GitVersion.SemVer) \
+                  -r $(RepoName) \
+                  .
+                cd ../..
+          # create output variables to share between stages
+          - bash: |
+              echo "Setting git version variables."
+              echo "Semantic Version dev: $(GitVersion.SemVer)"
+              echo "Semantic Version prd: $(GitVersion.MajorMinorPatch)"
+              echo "##vso[task.setvariable variable=devVersion;isOutput=true]$(GitVersion.SemVer)"
+              echo "##vso[task.setvariable variable=prdVersion;isOutput=true]$(GitVersion.MajorMinorPatch)"
+            name: buildStageOutput
+  - stage: Deploy_Backend_to_DEV
+    dependsOn:
+      - Build_Backend
+      - Build_Frontend_DEV
+    variables:
+      - group: ds-group-dev
+      - name: devVersion
+        value: $[stageDependencies.Build_Backend.Build.outputs['buildStageOutput.devVersion']]
+    jobs:
+      - deployment: DeployToDev
+        displayName: 'Deploy arsenal hospitality to Dev'
+        environment: 
+          name: ds-arsenal-hospitality-backend-dev
+          resourceName: primary-price-recs
+          resourceType: Kubernetes
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchDepth: 0
+                  persistCredentials: true
+                  clean: true
+                # run git version
+                - template: templates/git-version.yaml
+                  parameters:
+                    condition: eq(variables['SYSTEM.STAGEATTEMPT'], '1')
+                # connect to kubernetes and use the right namespace
+                - template: templates/k8s-helm-init-backend.yaml
+                  parameters:
+                    ServiceConnection: $(DevServiceConnection)
+                # update the helm chart and deploy
+                - task: Bash@3
+                  displayName: Deploy Helm chart to Dev
+                  continueOnError: false
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      set -e
+                      yq -i '(.image.env[] | select(.name == "APP_VERSION") | .value) = "$(devVersion)"' hospitality_app/_charts/backend/values.dev.yaml
+                      yq -i '.image.tag = "$(devVersion)"' hospitality_app/_charts/backend/values.dev.yaml
+                      yq -i '.deploymentLabels.app-version = "$(devVersion)"' hospitality_app/_charts/backend/values.dev.yaml
+                      helm upgrade arsenal-hospitality-backend ./hospitality_app/_charts/backend --install --namespace primary-price-recs --values ./hospitality_app/_charts/backend/values.dev.yaml
+  - stage: Deploy_Frontend_to_DEV
+    dependsOn:
+      - Build_Frontend_DEV
+      - Deploy_Backend_to_DEV
+    variables:
+      - group: ds-group-dev
+      - name: devVersion
+        value: $[stageDependencies.Build_Frontend_DEV.Build.outputs['buildStageOutput.devVersion']]
+    jobs:
+      - deployment: DeployToDev
+        displayName: 'Deploy arsenal hospitality to Dev'
+        environment: 
+          name: ds-arsenal-hospitality-frontend-dev
+          resourceName: primary-price-recs
+          resourceType: Kubernetes
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchDepth: 0
+                  persistCredentials: true
+                  clean: true
+                # run git version
+                - template: templates/git-version.yaml
+                  parameters:
+                    condition: eq(variables['SYSTEM.STAGEATTEMPT'], '1')
+                # connect to kubernetes and use the right namespace
+                - template: templates/k8s-helm-init-frontend.yaml
+                  parameters:
+                    ServiceConnection: $(DevServiceConnection)
+                # update the helm chart and deploy
+                - task: Bash@3
+                  displayName: Deploy Helm chart to Dev
+                  continueOnError: false
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      set -e
+                      yq -i '(.image.env[] | select(.name == "APP_VERSION") | .value) = "$(devVersion)"' hospitality_app/_charts/backend/values.dev.yaml
+                      yq -i '.image.tag = "$(devVersion)"' hospitality_app/_charts/backend/values.dev.yaml
+                      yq -i '.deploymentLabels.app-version = "$(devVersion)"' hospitality_app/_charts/backend/values.dev.yaml
+
+                      yq -i '(.image.env[] | select(.name == "APP_VERSION") | .value) = "$(devVersion)"' hospitality_app/_charts/frontend/values.dev.yaml
+                      yq -i '.image.tag = "$(devVersion)"' hospitality_app/_charts/frontend/values.dev.yaml
+                      yq -i '.deploymentLabels.app-version = "$(devVersion)"' hospitality_app/_charts/frontend/values.dev.yaml
+                      helm upgrade arsenal-hospitality-frontend ./hospitality_app/_charts/frontend --install --namespace primary-price-recs --values ./hospitality_app/_charts/frontend/values.dev.yaml
+                # Assign git user and email
+                - template: templates/git-init.yaml
+                # commit changes to develop
+                - task: Bash@3
+                  displayName: Commit updates to Git
+                  condition: eq(variables['SYSTEM.STAGEATTEMPT'], '1')
+                  continueOnError: false
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      set -e
+                      git add hospitality_app/_charts/backend/values.dev.yaml
+                      git add hospitality_app/_charts/frontend/values.dev.yaml
+                      git commit -m "[skip ci] Tagging dev deploy $(devVersion)"
+                      git push origin develop
+  - stage: Deploy_Backend_to_PROD
+    dependsOn: 
+      - Build_Backend
+      - Deploy_Frontend_to_DEV
+    variables:
+      - group: ds-group-prod
+      - name: devVersion
+        value: $[stageDependencies.Build_Backend.Build.outputs['buildStageOutput.devVersion']]
+      - name: prdVersion
+        value: $[stageDependencies.Build_Backend.Build.outputs['buildStageOutput.prdVersion']]
+    jobs:
+      - deployment: DeployToProd
+        displayName: 'Deploy Backend to Prod'
+        environment: 
+          name: ds-arsenal-hospitality-backend-prod
+          resourceName: primary-price-recs
+          resourceType: Kubernetes
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchDepth: 0
+                  persistCredentials: true
+                  clean: true
+                # run git version 
+                - template: templates/git-version.yaml
+                  parameters:
+                    condition: eq(variables['SYSTEM.STAGEATTEMPT'], '1')
+                # connect to kubernetes and use the right namespace
+                - template: templates/k8s-helm-init-backend.yaml
+                  parameters:
+                    ServiceConnection: $(ProdServiceConnection)
+                # promote the docker image to the prod repository 
+                - task: AzureCLI@2
+                  condition: eq(variables['SYSTEM.STAGEATTEMPT'], '1')
+                  displayName: 'Promote Docker image'
+                  continueOnError: false
+                  inputs:
+                    azureSubscription: $(ProdServiceConnection)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      set -e
+                      echo "Promoting $(devVersion) to $(prdVersion)"
+                      
+                      az acr import \
+                        --name $(RepoName) \
+                        --source arsenal-hospitality-backend:$(devVersion) \
+                        --image arsenal-hospitality-backend:$(prdVersion) \
+                        --registry $(DevRegistryResourceId)
+                - task: Bash@3
+                  displayName: 'Deploy Helm chart to Prod'
+                  continueOnError: false
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      yq -i '(.image.env[] | select(.name == "APP_VERSION") | .value) = "$(prdVersion)"' hospitality_app/_charts/backend/values.prd.yaml
+                      yq -i '.image.tag = "$(prdVersion)"' hospitality_app/_charts/backend/values.prd.yaml
+                      yq -i '.deploymentLabels.app-version = "$(prdVersion)"' hospitality_app/_charts/backend/values.prd.yaml
+                      helm upgrade arsenal-hospitality-backend ./hospitality_app/_charts/backend --install --namespace primary-price-recs --values ./hospitality_app/_charts/backend/values.prd.yaml
+  - stage: Deploy_Frontend_to_PROD
+    dependsOn: 
+      - Build_Frontend_DEV
+      - Deploy_Backend_to_PROD
+    variables:
+      - group: ds-group-prod
+      - name: devVersion
+        value: $[stageDependencies.Build_Frontend_DEV.Build.outputs['buildStageOutput.devVersion']]
+      - name: prdVersion
+        value: $[stageDependencies.Build_Frontend_DEV.Build.outputs['buildStageOutput.prdVersion']]
+    jobs:
+      - deployment: DeployToProd
+        displayName: 'Deploy Frontend to Prod'
+        environment: 
+          name: ds-arsenal-hospitality-frontend-prod
+          resourceName: primary-price-recs
+          resourceType: Kubernetes
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchDepth: 0
+                  persistCredentials: true
+                  clean: true
+                # run git version 
+                - template: templates/git-version.yaml
+                  parameters:
+                    condition: eq(variables['SYSTEM.STAGEATTEMPT'], '1')
+                # connect to kubernetes and use the right namespace
+                - template: templates/k8s-helm-init-frontend.yaml
+                  parameters:
+                    ServiceConnection: $(ProdServiceConnection)
+                - task: AzureCLI@2
+                  condition: eq(variables['SYSTEM.STAGEATTEMPT'], '1')
+                  displayName: 'Promote Docker image'
+                  continueOnError: false
+                  inputs:
+                    azureSubscription: $(ProdServiceConnection)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      set -e
+                      echo "Promoting $(devVersion) to $(prdVersion)"
+                      
+                      az acr import \
+                        --name $(RepoName) \
+                        --source arsenal-hospitality-frontend:$(devVersion) \
+                        --image arsenal-hospitality-frontend:$(prdVersion) \
+                        --registry $(DevRegistryResourceId)
+                # Assign git user and email
+                - template: templates/git-init.yaml
+                # merge develop into main
+                - task: Bash@3
+                  displayName: Merge develop into main
+                  condition: eq(variables['SYSTEM.STAGEATTEMPT'], '1')
+                  continueOnError: false
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      set -e
+                      git checkout develop
+                      git checkout main
+                      git merge develop
+                # update the helm chart and deploy
+                - task: Bash@3
+                  displayName: 'Deploy Helm chart to Prod'
+                  continueOnError: false
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      yq -i '(.image.env[] | select(.name == "APP_VERSION") | .value) = "$(prdVersion)"' hospitality_app/_charts/backend/values.prd.yaml
+                      yq -i '.image.tag = "$(prdVersion)"' hospitality_app/_charts/backend/values.prd.yaml
+                      yq -i '.deploymentLabels.app-version = "$(prdVersion)"' hospitality_app/_charts/backend/values.prd.yaml
+
+                      yq -i '(.image.env[] | select(.name == "APP_VERSION") | .value) = "$(prdVersion)"' hospitality_app/_charts/frontend/values.prd.yaml
+                      yq -i '.image.tag = "$(prdVersion)"' hospitality_app/_charts/frontend/values.prd.yaml
+                      yq -i '.deploymentLabels.app-version = "$(prdVersion)"' hospitality_app/_charts/frontend/values.prd.yaml
+                      helm upgrade arsenal-hospitality-frontend ./hospitality_app/_charts/frontend --install --namespace primary-price-recs --values ./hospitality_app/_charts/frontend/values.prd.yaml
+                # commit the changes to main
+                - task: Bash@3
+                  condition: eq(variables['SYSTEM.STAGEATTEMPT'], '1')
+                  displayName: 'Commit updates to Git'
+                  continueOnError: false
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      set -e
+                      git add hospitality_app/_charts/backend/values.prd.yaml
+                      git add hospitality_app/_charts/frontend/values.prd.yaml
+                      git commit -m "[MINOR] Tagging prod deploy $(prdVersion)"
+                      git push origin main
+
+                      git tag $(prdVersion)
+                      git push origin $(prdVersion)
+
+                      git checkout develop
+                      git pull origin develop
+                      git merge main -m "[skip ci] Merge branch 'main' into develop"
+                      git push origin develop

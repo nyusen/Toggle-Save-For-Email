@@ -1,13 +1,24 @@
-version: '3.8'
+version: '3'
 
 services:
-  api:
-    build: .
+  email-saver-backend:
+    container_name: email-saver-backend
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: local
     ports:
       - "8000:8000"
-    environment:
-      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}
-      - AZURE_STORAGE_CONTAINER_NAME=${AZURE_STORAGE_CONTAINER_NAME}
+    env_file:
+      - .env
     volumes:
-      - ./app:/app
-    restart: unless-stopped
+      - ./app:/code/app
+      - ./.azure-for-docker:/root/.azure
+    command:
+      - "uvicorn"
+      - "app.main:app"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8000"
+      - "--reload"

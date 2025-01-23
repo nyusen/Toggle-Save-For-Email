@@ -1,0 +1,117 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# replicaCount: 3
+image:
+  repository: evieacrmlprd01.azurecr.io/arsenal-hospitality-backend
+  pullPolicy: Always
+  tag: "0.28.0"
+  env:
+    - name: APP_VERSION
+      value: "0.28.0"
+  envFrom:
+    - secretRef:
+        name: arsenal-hospitality-backend-creds
+    - configMapRef:
+        name: arsenal-hospitality-backend-config
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+
+  annotations: {}
+  # The name of the service account to use.
+
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+podAnnotations: {}
+podSecurityContext: {}
+# fsGroup: 2000
+
+securityContext: {}
+# capabilities:
+
+#   drop:
+
+#   - ALL
+
+# readOnlyRootFilesystem: true
+
+# runAsNonRoot: true
+
+# runAsUser: 1000
+service:
+  type: ClusterIP #LoadBalancer
+  port: 8502
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/enable-ssl-chain-completion: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  pathPrefix: /arsenal-hospitality/api
+  hosts:
+    - host: ml-inf-svc-prd.eventellect.com
+      paths:
+        - path: /arsenal-hospitality/api(/|$)(.*)
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: ingress-ev-wildcard-tls
+      hosts:
+        - ml-inf-svc-prd.eventellect.com
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 3
+          periodSeconds: 15
+      selectPolicy: Max
+nodeSelector: {}
+tolerations: []
+affinity: {}
+deploymentLabels:
+  azure.workload.identity/use: "true"
+  app-version: "0.28.0"
+serviceAccountName: primary-price-recs-wi-sa
+configs:
+  ENV: "prod"
+  TJT_BASE_URL: "https://tjhub3.com/hospitality_api_arsenal"

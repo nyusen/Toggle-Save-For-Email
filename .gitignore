@@ -1,2 +1,5 @@
 node_modules
 .venv
+.azure-for-docker
+__pycache__
+.env

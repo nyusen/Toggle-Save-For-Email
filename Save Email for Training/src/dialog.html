@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <title>Confirm Send</title>
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+    <script type="text/javascript">
+        Office.onReady(function() {
+            document.getElementById('yes-button').onclick = function() {
+                Office.context.ui.messageParent('yes');
+            };
+            
+            document.getElementById('no-button').onclick = function() {
+                Office.context.ui.messageParent('no');
+            };
+        });
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #yes-button {
+            background-color: #0078d4;
+            color: white;
+        }
+        #no-button {
+            background-color: #e0e0e0;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div>Are you sure you want to send this email?</div>
+    <div class="button-container">
+        <button id="yes-button">Yes</button>
+        <button id="no-button">No</button>
+    </div>
+</body>
+</html>

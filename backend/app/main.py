@@ -5,8 +5,9 @@ from datetime import datetime
 from typing import List
 import os
 import json
-from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv
+from app.clients.blob import BlobClient
+from app.lib.configurations import app_settings
 
 load_dotenv()
 
@@ -21,13 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Get Azure Storage connection string from environment variable
-connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-container_name = os.getenv("AZURE_STORAGE_CONTAINER_NAME", "email-training-data")
-
 # Initialize the BlobServiceClient
-blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-container_client = blob_service_client.get_container_client(container_name)
+blob_client = BlobClient()
 
 class EmailData(BaseModel):
     subject: str
@@ -46,8 +42,7 @@ async def save_email(email_data: EmailData):
         email_json = email_data.model_dump_json()
         
         # Upload to blob storage
-        blob_client = container_client.get_blob_client(filename)
-        blob_client.upload_blob(email_json, overwrite=True)
+        blob_client.save_to_blob(data=email_json, file_name=filename, container_name=app_settings.container_name)
         
         return {"message": "Email saved successfully", "filename": filename}
     
