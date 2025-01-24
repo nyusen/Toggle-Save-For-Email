@@ -1,0 +1,54 @@
+replicaCount: 1
+
+image:
+  repository: evieacrmldev01.azurecr.io/outlook-save-for-training
+  pullPolicy: Always
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/enable-ssl-chain-completion: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  pathPrefix: /outlook-save-for-training
+  hosts:
+    - host: ml-inf-svc-dev.eventellect.com
+      paths:
+        - path: /outlook-save-for-training(/|$)(.*)
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: ingress-ev-wildcard-tls
+      hosts:
+        - ml-inf-svc-dev.eventellect.com
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

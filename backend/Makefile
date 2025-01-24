@@ -45,5 +45,5 @@ run_from_acr:
 deploy_aks_dev:
 	kubectl config use-context evie-aks-mlinf-dev-01-admin
 	kubectl config set-context --current --namespace=pulse
-	helm upgrade corpus-collector-backend _charts/backend --install --values _charts/backend/values.dev.yaml
+	helm upgrade corpus-collector-backend ../_charts/backend --install --values ../_charts/backend/values.dev.yaml
 

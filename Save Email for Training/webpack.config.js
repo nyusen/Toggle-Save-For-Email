@@ -4,9 +4,12 @@ const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const path = require("path");
+const env = process.env;  // Access environment variables
+
+const dev = env.NODE_ENV === "development";
 
 const urlDev = "https://localhost:3000/";
-const urlProd = "https://www.contoso.com/"; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
+const urlProd = "https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/";
 
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();
@@ -14,7 +17,6 @@ async function getHttpsOptions() {
 }
 
 module.exports = async (env, options) => {
-  const dev = options.mode === "development";
   const config = {
     devtool: "source-map",
     entry: {
@@ -106,10 +108,11 @@ module.exports = async (env, options) => {
         "Access-Control-Allow-Origin": "*",
       },
       server: {
-        type: "https",
-        options: env.WEBPACK_BUILD || options.https !== undefined ? options.https : await getHttpsOptions(),
+        type: dev ? "https" : "http",
+        options: dev ? await getHttpsOptions() : {},
       },
       port: process.env.npm_package_config_dev_server_port || 3000,
+      allowedHosts: 'all',
     },
   };
 

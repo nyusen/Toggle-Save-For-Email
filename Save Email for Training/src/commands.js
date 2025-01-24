@@ -13,7 +13,7 @@ Office.initialize = function (reason) {
 // <param name="event">MessageSend event is automatically passed by BlockOnSend code to the function specified in the manifest.</param>
 function validateBody(event) {
     // Get the body of the message
-    Office.context.ui.displayDialogAsync('https://localhost:3000/dialog.html', 
+    Office.context.ui.displayDialogAsync('https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/dialog.html', 
       {height: 30, width: 20, displayInIframe: true},
       function (result) {
           if (result.status === Office.AsyncResultStatus.Failed) {
