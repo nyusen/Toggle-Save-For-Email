@@ -8,11 +8,11 @@
     <script type="text/javascript">
         Office.onReady(function() {
             document.getElementById('yes-button').onclick = function() {
-                Office.context.ui.messageParent('yes');
+                Office.context.ui.messageParent('Send and Save');
             };
             
             document.getElementById('no-button').onclick = function() {
-                Office.context.ui.messageParent('no');
+                Office.context.ui.messageParent('Save Only');
             };
         });
     </script>
@@ -47,10 +47,10 @@
     </style>
 </head>
 <body>
-    <div>Are you sure you want to send this email?</div>
+    <div>Would you like to save this email for training?</div>
     <div class="button-container">
-        <button id="yes-button">Yes</button>
-        <button id="no-button">No</button>
+        <button id="yes-button">Send and Save</button>
+        <button id="no-button">Send Only</button>
     </div>
 </body>
 </html>

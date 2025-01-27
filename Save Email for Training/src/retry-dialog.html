@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <title>Confirm Send</title>
+    <title>Save Failed</title>
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
     <script type="text/javascript">
         Office.onReady(function() {
-            document.getElementById('yes-button').onclick = function() {
-                Office.context.ui.messageParent('yes');
+            document.getElementById('retry-button').onclick = function() {
+                Office.context.ui.messageParent('retry');
             };
             
-            document.getElementById('no-button').onclick = function() {
-                Office.context.ui.messageParent('no');
+            document.getElementById('send-only-button').onclick = function() {
+                Office.context.ui.messageParent('send-only');
             };
         });
     </script>
@@ -36,21 +36,27 @@
             cursor: pointer;
             font-size: 14px;
         }
-        #yes-button {
+        #retry-button {
             background-color: #0078d4;
             color: white;
         }
-        #no-button {
+        #send-only-button {
             background-color: #e0e0e0;
             color: black;
         }
+        .error-message {
+            color: #D83B01;
+            text-align: center;
+            margin-bottom: 10px;
+        }
     </style>
-<script defer src="polyfill.js"></script></head>
+</head>
 <body>
-    <div>Are you sure you want to send this email?</div>
+    <div class="error-message">Failed to save email for training</div>
+    <div>Would you like to try again or send without saving?</div>
     <div class="button-container">
-        <button id="yes-button">Yes</button>
-        <button id="no-button">No</button>
+        <button id="retry-button">Try Again</button>
+        <button id="send-only-button">Send Only</button>
     </div>
 </body>
 </html>

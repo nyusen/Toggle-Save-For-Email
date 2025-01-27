@@ -79,6 +79,11 @@ module.exports = async (env, options) => {
         template: "./src/dialog.html",
         chunks: ["polyfill"],
       }),
+      new HtmlWebpackPlugin({
+        filename: "retry-dialog.html",
+        template: "./src/retry-dialog.html",
+        chunks: ["polyfill"],
+      }),
       new CopyWebpackPlugin({
         patterns: [
           {
