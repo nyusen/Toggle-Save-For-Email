@@ -8,10 +8,10 @@
 
   <Id>D0590B2A-0CB8-4B4F-AD70-C520AFA6E3FD</Id>
   <Version>1.0</Version>
-  <ProviderName>Contoso</ProviderName>
+  <ProviderName>Eventellect</ProviderName>
   <DefaultLocale>en-us</DefaultLocale>
-  <DisplayName DefaultValue="Contoso Message Body Checker" />
-  <Description DefaultValue="Contoso Message Body Checker" />
+  <DisplayName DefaultValue="Eventellect Training Email Saver" />
+  <Description DefaultValue="Eventellect Training Email Saver" />
 
   <!-- Add AppDomains to allow dialog windows -->
   <AppDomains>
