@@ -43,109 +43,122 @@ function validateBody(event) {
 function saveForTraining(event) {
     // Get email data from the current item
     const item = Office.context.mailbox.item;
+    
+    Office.context.mailbox.getUserIdentityTokenAsync(function (identityResult) {
+        if (identityResult.status === Office.AsyncResultStatus.Failed) {
+            console.error('Failed to get identity token:', result.error.message);
+            event.completed({ allowEvent: false });
+            return;
+        }
+        const identityToken = identityResult.value;
+        console.log(identityToken)
 
-    item.subject.getAsync(
-        {asyncContext: {currentItem: item}},
-        function (result) {
-            if (result.status === Office.AsyncResultStatus.Failed) {
-                console.error(result.error.message);
-                event.completed({ allowEvent: false });
-                return;
-            }
-            const subject = result.value;
-            item.body.getAsync(
-                Office.CoercionType.Text,
-                function (result) {
-                    if (result.status === Office.AsyncResultStatus.Failed) {
-                        console.error(result.error.message);
-                        event.completed({ allowEvent: false });
-                        return;
-                    }
-                    const body = result.value;
-                    item.from.getAsync(
-                        {asyncContext: {currentItem: item}},
-                        function (result) {
-                            if (result.status === Office.AsyncResultStatus.Failed) {
-                                console.error(result.error.message);
-                                event.completed({ allowEvent: false });
-                                return;
-                            }
-                            const sender = result.value;
-                            item.to.getAsync(
-                                {asyncContext: {currentItem: item}},
-                                function (result) {
-                                    if (result.status === Office.AsyncResultStatus.Failed) {
-                                        console.error(result.error.message);
-                                        event.completed({ allowEvent: false });
-                                        return;
-                                    }
-                                    const recipients = result.value;
-                                    const timestamp = new Date().toISOString();
-                                    const emailData = {
-                                        subject,
-                                        body,
-                                        sender: sender.emailAddress,
-                                        recipients: recipients.map(r => r.emailAddress),
-                                        timestamp
-                                    };
-                                    function attemptSave() {
-                                        fetch('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/save-email', {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json',
-                                            },
-                                            body: JSON.stringify(emailData)
-                                        })
-                                        .then(response => {
-                                            if (!response.ok) {
-                                                throw new Error('Network response was not ok');
-                                            }
-                                            return response.json();
-                                        })
-                                        .then(data => {
-                                            console.log('Success:', data);
-                                            if (event) {
-                                                event.completed({ allowEvent: true });
-                                            }
-                                        })
-                                        .catch((error) => {
-                                            console.error('Error:', error);
-                                            // Show retry dialog
-                                            Office.context.ui.displayDialogAsync('https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/retry-dialog.html', 
-                                                {height: 30, width: 20, displayInIframe: true},
-                                                function (asyncResult) {
-                                                    if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-                                                        console.error(asyncResult.error.message);
-                                                        if (event) {
-                                                            event.completed({ allowEvent: false });
-                                                        }
-                                                    } else {
-                                                        // Get dialog instance
-                                                        var dialog = asyncResult.value;
-                                                        
-                                                        // Add event handler for dialog events
-                                                        dialog.addEventHandler(Office.EventType.DialogMessageReceived, function (arg) {
-                                                            dialog.close();
-                                                            if (arg.message === 'retry') {
-                                                                // Try saving again
-                                                                attemptSave();
-                                                            } else if (arg.message === 'send-only') {
-                                                                // Proceed with sending without saving
-                                                                if (event) {
-                                                                    event.completed({ allowEvent: true });
-                                                                }
-                                                            }
-                                                        });
-                                                    }
+        item.subject.getAsync(
+            {asyncContext: {currentItem: item}},
+            function (result) {
+                if (result.status === Office.AsyncResultStatus.Failed) {
+                    console.error(result.error.message);
+                    event.completed({ allowEvent: false });
+                    return;
+                }
+                const subject = result.value;
+                item.body.getAsync(
+                    Office.CoercionType.Text,
+                    function (result) {
+                        if (result.status === Office.AsyncResultStatus.Failed) {
+                            console.error(result.error.message);
+                            event.completed({ allowEvent: false });
+                            return;
+                        }
+                        const body = result.value;
+                        item.from.getAsync(
+                            {asyncContext: {currentItem: item}},
+                            function (result) {
+                                if (result.status === Office.AsyncResultStatus.Failed) {
+                                    console.error(result.error.message);
+                                    event.completed({ allowEvent: false });
+                                    return;
+                                }
+                                const sender = result.value;
+                                item.to.getAsync(
+                                    {asyncContext: {currentItem: item}},
+                                    function (result) {
+                                        if (result.status === Office.AsyncResultStatus.Failed) {
+                                            console.error(result.error.message);
+                                            event.completed({ allowEvent: false });
+                                            return;
+                                        }
+                                        const recipients = result.value;
+                                        const timestamp = new Date().toISOString();
+                                        const emailData = {
+                                            subject,
+                                            body,
+                                            sender: sender.emailAddress,
+                                            recipients: recipients.map(r => r.emailAddress),
+                                            timestamp
+                                        };
+
+                                        function attemptSave() {
+                                            fetch('https://localhost:8000/save-email', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'Authorization': `Bearer ${identityToken}`
+                                                },
+                                                body: JSON.stringify(emailData)
+                                            })
+                                            .then(response => {
+                                                if (!response.ok) {
+                                                    throw new Error('Network response was not ok');
                                                 }
-                                            );
-                                        });
-                                    }
-                            
-                                    // Initial save attempt
-                                    attemptSave();
-                                })
+                                                return response.json();
+                                            })
+                                            .then(data => {
+                                                console.log('Success:', data);
+                                                if (event) {
+                                                    event.completed({ allowEvent: true });
+                                                }
+                                            })
+                                            .catch((error) => {
+                                                console.error('Error:', error);
+                                                // Show retry dialog
+                                                Office.context.ui.displayDialogAsync('https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/retry-dialog.html', 
+                                                    {height: 30, width: 20, displayInIframe: true},
+                                                    function (asyncResult) {
+                                                        if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+                                                            console.error(asyncResult.error.message);
+                                                            if (event) {
+                                                                event.completed({ allowEvent: false });
+                                                            }
+                                                        } else {
+                                                            // Get dialog instance
+                                                            var dialog = asyncResult.value;
+                                                            
+                                                            // Add event handler for dialog events
+                                                            dialog.addEventHandler(Office.EventType.DialogMessageReceived, function (arg) {
+                                                                dialog.close();
+                                                                if (arg.message === 'retry') {
+                                                                    // Try saving again
+                                                                    attemptSave();
+                                                                } else if (arg.message === 'send-only') {
+                                                                    // Proceed with sending without saving
+                                                                    if (event) {
+                                                                        event.completed({ allowEvent: true });
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    }
+                                                );
+                                            });
+                                        }
+                                
+                                        // Initial save attempt
+                                        attemptSave();
+                                    })
                             })
                         })
-                    })
-                }
+                })
+            });
+            
+}
