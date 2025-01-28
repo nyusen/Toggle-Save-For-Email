@@ -66,6 +66,17 @@
           <bt:Url id="residUILessFunctionFileUrl" DefaultValue="https://localhost:3000/commands.html" ></bt:Url>
         </bt:Urls>
       </Resources>
+      <WebApplicationInfo>
+        <Id>6d7e781e-9cf5-48ff-8c05-b697ca1a90e3</Id>
+        <Resource>api://localhost:3000/6d7e781e-9cf5-48ff-8c05-b697ca1a90e3</Resource>
+        <Scopes>
+            <Scope>openid</Scope>
+            <Scope>Mail.Read</Scope>
+            <Scope>Mail.Send</Scope>
+            <Scope>profile</Scope>
+            <Scope>email</Scope>
+        </Scopes>
+      </WebApplicationInfo>
     </VersionOverrides>
   </VersionOverrides>
 </OfficeApp>
