@@ -10,10 +10,48 @@
     <!-- Office JavaScript API -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
     <script type="module" src="commands.js"></script>
+    
+    <style>
+        .container {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .sign-in-button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .sign-in-button:hover {
+            background-color: #106ebe;
+        }
+        .sign-in-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status-message {
+            margin-top: 10px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
 </head>
 
 <body>
-  
+    <div class="container">
+        <div id="signInSection">
+            <button id="signInButton" class="sign-in-button">Sign in with Microsoft</button>
+            <p id="statusMessage" class="status-message">Please sign in to use the add-in.</p>
+        </div>
+    </div>
 </body>
 
 </html>

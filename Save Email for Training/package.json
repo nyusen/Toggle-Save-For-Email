@@ -30,6 +30,7 @@
     "type-check:watch": "tsc --noEmit --watch"
   },
   "dependencies": {
+    "@azure/msal-browser": "^3.27.0",
     "core-js": "^3.36.0",
     "regenerator-runtime": "^0.14.1"
   },

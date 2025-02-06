@@ -7,6 +7,11 @@
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
     <script type="text/javascript">
         Office.onReady(function() {
+            // Get error message from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorMessage = urlParams.get('error') || 'Failed to save email for training';
+            document.getElementById('error-message').textContent = errorMessage;
+
             document.getElementById('retry-button').onclick = function() {
                 Office.context.ui.messageParent('retry');
             };
@@ -52,7 +57,7 @@
     </style>
 </head>
 <body>
-    <div class="error-message">Failed to save email for training</div>
+    <div id="error-message" class="error-message"></div>
     <div>Would you like to try again or send without saving?</div>
     <div class="button-container">
         <button id="retry-button">Try Again</button>
