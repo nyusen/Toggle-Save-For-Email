@@ -16,6 +16,12 @@
   <!-- Add AppDomains to allow dialog windows -->
   <AppDomains>
     <AppDomain>ml-inf-svc-dev.eventellect.com</AppDomain>
+    <AppDomain>login.microsoftonline.com</AppDomain>
+    <AppDomain>login.live.com</AppDomain>
+    <AppDomain>login.windows.net</AppDomain>
+    <AppDomain>account.live.com</AppDomain>
+    <AppDomain>account.microsoft.com</AppDomain>
+    <AppDomain>localhost</AppDomain>
   </AppDomains>
 
   <Requirements>
@@ -66,6 +72,17 @@
           <bt:Url id="residUILessFunctionFileUrl" DefaultValue="https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/commands.html" ></bt:Url>
         </bt:Urls>
       </Resources>
+      <WebApplicationInfo>
+        <Id>6d7e781e-9cf5-48ff-8c05-b697ca1a90e3</Id>
+        <Resource>api://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/6d7e781e-9cf5-48ff-8c05-b697ca1a90e3</Resource>
+        <Scopes>
+            <Scope>openid</Scope>
+            <Scope>Mail.Read</Scope>
+            <Scope>Mail.Send</Scope>
+            <Scope>profile</Scope>
+            <Scope>email</Scope>
+        </Scopes>
+      </WebApplicationInfo>
     </VersionOverrides>
   </VersionOverrides>
 </OfficeApp>

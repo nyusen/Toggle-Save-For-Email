@@ -30,10 +30,12 @@
     "type-check:watch": "tsc --noEmit --watch"
   },
   "dependencies": {
+    "@azure/msal-browser": "^3.27.0",
     "core-js": "^3.36.0",
     "regenerator-runtime": "^0.14.1"
   },
   "devDependencies": {
+    "@azure/msal-browser": "^3.27.0",
     "@babel/core": "^7.24.0",
     "@babel/preset-env": "^7.25.4",
     "@babel/preset-typescript": "^7.23.3",

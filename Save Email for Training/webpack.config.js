@@ -26,6 +26,10 @@ module.exports = async (env, options) => {
     output: {
       path: path.resolve(__dirname, "dist"),
       clean: true,
+      library: {
+        name: 'commands',
+        type: 'window',
+      },
     },
     resolve: {
       extensions: [".ts", ".tsx", ".html", ".js"],
@@ -50,7 +54,7 @@ module.exports = async (env, options) => {
           use: {
             loader: "babel-loader",
             options: {
-              presets: ["@babel/preset-env", "@babel/preset-typescript"],
+              presets: ["@babel/preset-env"],
             },
           },
         },
@@ -77,6 +81,21 @@ module.exports = async (env, options) => {
       new HtmlWebpackPlugin({
         filename: "dialog.html",
         template: "./src/dialog.html",
+        chunks: ["polyfill", "dialog"],
+      }),
+      new HtmlWebpackPlugin({
+        filename: "signin-dialog.html",
+        template: "./src/signin-dialog.html",
+        chunks: ["polyfill"],
+      }),
+      new HtmlWebpackPlugin({
+        filename: "auth-callback.html",
+        template: "./src/auth-callback.html",
+        chunks: ["polyfill"],
+      }),
+      new HtmlWebpackPlugin({
+        filename: "sign-in-start.html",
+        template: "./src/sign-in-start.html",
         chunks: ["polyfill"],
       }),
       new HtmlWebpackPlugin({
