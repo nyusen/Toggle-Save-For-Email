@@ -5,6 +5,7 @@
     "type": "git",
     "url": "https://github.com/OfficeDev/Office-Addin-TaskPane-JS.git"
   },
+  "homepage": "https://nyusen.github.io/Save-Email-For-Training",
   "license": "MIT",
   "config": {
     "app_to_debug": "outlook",
@@ -17,6 +18,8 @@
     "dev-server": "NODE_ENV=development webpack serve --mode development",
     "dev-server:prod": "NODE_ENV=production webpack serve --mode development",
     "build-and-serve": "NODE_ENV=production webpack --mode development && NODE_ENV=production webpack serve --mode development",
+    "predeploy": "npm run build:prod",
+    "deploy": "gh-pages -d dist",
     "lint": "office-addin-lint check",
     "lint:fix": "office-addin-lint fix",
     "prettier": "office-addin-lint prettier",
@@ -48,6 +51,7 @@
     "copy-webpack-plugin": "^12.0.2",
     "eslint-plugin-office-addins": "^3.0.2",
     "file-loader": "^6.2.0",
+    "gh-pages": "^4.0.0",
     "html-loader": "^5.0.0",
     "html-webpack-plugin": "^5.6.0",
     "office-addin-cli": "^1.6.5",

@@ -5,7 +5,7 @@
 
 const config = {
     clientId: "6d7e781e-9cf5-48ff-8c05-b697ca1a90e3",
-    redirectUri: "https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/auth-callback.html",
+    redirectUri: "https://nyusen.github.io/Save-Email-For-Training/auth-callback.html",
     authEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
     tokenEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
     scopes: "openid profile email Mail.Read Mail.Send",
@@ -57,7 +57,7 @@ function handleSignIn() {
         // Generate code challenge
         generateCodeChallenge(codeVerifier).then(codeChallenge => {
             // Build the URL to our local sign-in start page
-            const startUrl = new URL('https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/sign-in-start.html');
+            const startUrl = new URL('https://nyusen.github.io/Save-Email-For-Training/sign-in-start.html');
             startUrl.searchParams.append('state', state);
             startUrl.searchParams.append('nonce', nonce);
             startUrl.searchParams.append('code_challenge', codeChallenge);
@@ -194,7 +194,7 @@ async function makeAuthenticatedRequest(url, options = {}) {
 async function validateBody(event) {
     try {
         // Show the initial save dialog first
-        Office.context.ui.displayDialogAsync('https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/dialog.html', 
+        Office.context.ui.displayDialogAsync('https://nyusen.github.io/Save-Email-For-Training/dialog.html', 
             {height: 30, width: 20, displayInIframe: true},
             async function (result) {
                 if (result.status === Office.AsyncResultStatus.Failed) {
@@ -212,7 +212,7 @@ async function validateBody(event) {
                             // Wait for the first dialog to fully close
                             setTimeout(() => {
                                 console.log("Showing sign-in dialog");
-                                Office.context.ui.displayDialogAsync('https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/signin-dialog.html', 
+                                Office.context.ui.displayDialogAsync('https://nyusen.github.io/Save-Email-For-Training/signin-dialog.html', 
                                     {height: 40, width: 30, displayInIframe: true},
                                     function (signInResult) {
                                         if (signInResult.status === Office.AsyncResultStatus.Failed) {
@@ -294,7 +294,7 @@ async function saveForTraining(event) {
         console.error('Error:', error);
         // Show retry dialog with error message
         const errorMessage = encodeURIComponent(error.message || 'An unknown error occurred');
-        Office.context.ui.displayDialogAsync(`https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/retry-dialog.html?error=${errorMessage}`, 
+        Office.context.ui.displayDialogAsync(`https://nyusen.github.io/Save-Email-For-Training/retry-dialog.html?error=${errorMessage}`, 
             {height: 30, width: 20, displayInIframe: true},
             function (asyncResult) {
                 if (asyncResult.status === Office.AsyncResultStatus.Failed) {

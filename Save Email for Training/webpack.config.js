@@ -9,7 +9,7 @@ const env = process.env;  // Access environment variables
 const dev = env.NODE_ENV === "development";
 
 const urlDev = "https://localhost:3000/";
-const urlProd = "https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/";
+const urlProd = "https://nyusen.github.io/Save-Email-For-Training/";
 
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();

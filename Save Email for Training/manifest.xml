@@ -22,6 +22,7 @@
     <AppDomain>account.live.com</AppDomain>
     <AppDomain>account.microsoft.com</AppDomain>
     <AppDomain>localhost</AppDomain>
+    <AppDomain>nyusen.github.io</AppDomain>
   </AppDomains>
 
   <Requirements>
@@ -33,8 +34,14 @@
   <FormSettings>
     <Form xsi:type="ItemEdit">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/commands.html" />
+        <SourceLocation DefaultValue="https://nyusen.github.io/Save-Email-For-Training/commands.html" />
       </DesktopSettings>
+      <TabletSettings>
+        <SourceLocation DefaultValue="https://nyusen.github.io/Save-Email-For-Training/commands.html" />
+      </TabletSettings>
+      <PhoneSettings>
+        <SourceLocation DefaultValue="https://nyusen.github.io/Save-Email-For-Training/commands.html" />
+      </PhoneSettings>
     </Form>
   </FormSettings>
 
@@ -64,23 +71,32 @@
               <Event Type="ItemSend" FunctionExecution="asynchronous" FunctionName="validateBody" />
             </ExtensionPoint>
           </DesktopFormFactor>
+          <MobileFormFactor>
+            <!-- The functionfile and function name to call on message send.  -->
+            <!-- In this particular case the function validateBody will be called within the JavaScript code referenced in residUILessFunctionFileUrl. -->
+            <FunctionFile resid="residUILessFunctionFileUrl" />
+            <ExtensionPoint xsi:type="Events">
+              <Event Type="ItemSend" FunctionExecution="asynchronous" FunctionName="validateBody" />
+            </ExtensionPoint>
+          </MobileFormFactor>
         </Host>
       </Hosts>
       <Resources>
         <bt:Urls>
-           <!-- The JavaScript code is hosted on a secure and trusted web server. -->
-          <bt:Url id="residUILessFunctionFileUrl" DefaultValue="https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/commands.html" ></bt:Url>
+          <!-- The JavaScript code is hosted on a secure and trusted web server. -->
+          <bt:Url id="residUILessFunctionFileUrl" DefaultValue="https://nyusen.github.io/Save-Email-For-Training/commands.html" />
+          <bt:Url id="residMobileUILessFunctionFileUrl" DefaultValue="https://nyusen.github.io/Save-Email-For-Training/commands.html" />
         </bt:Urls>
       </Resources>
       <WebApplicationInfo>
         <Id>6d7e781e-9cf5-48ff-8c05-b697ca1a90e3</Id>
-        <Resource>api://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/6d7e781e-9cf5-48ff-8c05-b697ca1a90e3</Resource>
+        <Resource>api://nyusen.github.io/Save-Email-For-Training/6d7e781e-9cf5-48ff-8c05-b697ca1a90e3</Resource>
         <Scopes>
-            <Scope>openid</Scope>
-            <Scope>Mail.Read</Scope>
-            <Scope>Mail.Send</Scope>
-            <Scope>profile</Scope>
-            <Scope>email</Scope>
+          <Scope>openid</Scope>
+          <Scope>Mail.Read</Scope>
+          <Scope>Mail.Send</Scope>
+          <Scope>profile</Scope>
+          <Scope>email</Scope>
         </Scopes>
       </WebApplicationInfo>
     </VersionOverrides>
