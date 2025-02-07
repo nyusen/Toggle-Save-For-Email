@@ -34,13 +34,13 @@
   <FormSettings>
     <Form xsi:type="ItemEdit">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://nyusen.github.io/Save-Email-For-Training/commands.html" />
+        <SourceLocation DefaultValue="https://localhost:3000/commands.html" />
       </DesktopSettings>
       <TabletSettings>
-        <SourceLocation DefaultValue="https://nyusen.github.io/Save-Email-For-Training/commands.html" />
+        <SourceLocation DefaultValue="https://localhost:3000/commands.html" />
       </TabletSettings>
       <PhoneSettings>
-        <SourceLocation DefaultValue="https://nyusen.github.io/Save-Email-For-Training/commands.html" />
+        <SourceLocation DefaultValue="https://localhost:3000/commands.html" />
       </PhoneSettings>
     </Form>
   </FormSettings>
@@ -67,6 +67,50 @@
             <!-- The functionfile and function name to call on message send.  -->
             <!-- In this particular case the function validateBody will be called within the JavaScript code referenced in residUILessFunctionFileUrl. -->
             <FunctionFile resid="residUILessFunctionFileUrl" />
+            
+            <!-- Message Compose -->
+            <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="msgComposeGroup">
+                  <Label resid="groupLabel" />
+                  <Control xsi:type="Menu" id="msgComposeSendMenu">
+                    <Label resid="sendOptionsLabel" />
+                    <Supertip>
+                      <Title resid="sendOptionsTitle" />
+                      <Description resid="sendOptionsDesc" />
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="icon16" />
+                      <bt:Image size="32" resid="icon32" />
+                      <bt:Image size="80" resid="icon80" />
+                    </Icon>
+                    <Items>
+                      <Item id="sendOnly">
+                        <Label resid="sendOnlyLabel" />
+                        <Supertip>
+                          <Title resid="sendOnlyTitle" />
+                          <Description resid="sendOnlyDesc" />
+                        </Supertip>
+                        <Action xsi:type="ExecuteFunction">
+                          <FunctionName>setSendOnly</FunctionName>
+                        </Action>
+                      </Item>
+                      <Item id="sendAndSave">
+                        <Label resid="sendAndSaveLabel" />
+                        <Supertip>
+                          <Title resid="sendAndSaveTitle" />
+                          <Description resid="sendAndSaveDesc" />
+                        </Supertip>
+                        <Action xsi:type="ExecuteFunction">
+                          <FunctionName>setSendAndSave</FunctionName>
+                        </Action>
+                      </Item>
+                    </Items>
+                  </Control>
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
+
             <ExtensionPoint xsi:type="Events">
               <Event Type="ItemSend" FunctionExecution="asynchronous" FunctionName="validateBody" />
             </ExtensionPoint>
@@ -82,23 +126,31 @@
         </Host>
       </Hosts>
       <Resources>
+        <bt:Images>
+          <bt:Image id="icon16" DefaultValue="https://localhost:3000/assets/icon-16.png" />
+          <bt:Image id="icon32" DefaultValue="https://localhost:3000/assets/icon-32.png" />
+          <bt:Image id="icon80" DefaultValue="https://localhost:3000/assets/icon-80.png" />
+        </bt:Images>
         <bt:Urls>
           <!-- The JavaScript code is hosted on a secure and trusted web server. -->
-          <bt:Url id="residUILessFunctionFileUrl" DefaultValue="https://nyusen.github.io/Save-Email-For-Training/commands.html" />
-          <bt:Url id="residMobileUILessFunctionFileUrl" DefaultValue="https://nyusen.github.io/Save-Email-For-Training/commands.html" />
+          <bt:Url id="residUILessFunctionFileUrl" DefaultValue="https://localhost:3000/commands.html" />
+          <bt:Url id="residMobileUILessFunctionFileUrl" DefaultValue="https://localhost:3000/commands.html" />
         </bt:Urls>
+        <bt:ShortStrings>
+          <bt:String id="groupLabel" DefaultValue="Save Options" />
+          <bt:String id="sendOptionsLabel" DefaultValue="Send Options" />
+          <bt:String id="sendOptionsTitle" DefaultValue="Send Options" />
+          <bt:String id="sendOnlyLabel" DefaultValue="Send Only" />
+          <bt:String id="sendOnlyTitle" DefaultValue="Send Only" />
+          <bt:String id="sendAndSaveLabel" DefaultValue="Save and Send" />
+          <bt:String id="sendAndSaveTitle" DefaultValue="Save and Send" />
+        </bt:ShortStrings>
+        <bt:LongStrings>
+          <bt:String id="sendOptionsDesc" DefaultValue="Choose whether to save the email for training before sending" />
+          <bt:String id="sendOnlyDesc" DefaultValue="Send the email without saving for training" />
+          <bt:String id="sendAndSaveDesc" DefaultValue="Save the email for training before sending" />
+        </bt:LongStrings>
       </Resources>
-      <WebApplicationInfo>
-        <Id>6d7e781e-9cf5-48ff-8c05-b697ca1a90e3</Id>
-        <Resource>api://nyusen.github.io/Save-Email-For-Training/6d7e781e-9cf5-48ff-8c05-b697ca1a90e3</Resource>
-        <Scopes>
-          <Scope>openid</Scope>
-          <Scope>Mail.Read</Scope>
-          <Scope>Mail.Send</Scope>
-          <Scope>profile</Scope>
-          <Scope>email</Scope>
-        </Scopes>
-      </WebApplicationInfo>
     </VersionOverrides>
   </VersionOverrides>
 </OfficeApp>

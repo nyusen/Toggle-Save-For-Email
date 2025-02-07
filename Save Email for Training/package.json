@@ -5,7 +5,7 @@
     "type": "git",
     "url": "https://github.com/OfficeDev/Office-Addin-TaskPane-JS.git"
   },
-  "homepage": "https://nyusen.github.io/Save-Email-For-Training",
+  "homepage": "https://localhost:3000",
   "license": "MIT",
   "config": {
     "app_to_debug": "outlook",

@@ -5,7 +5,7 @@
 
 const config = {
     clientId: "6d7e781e-9cf5-48ff-8c05-b697ca1a90e3",
-    redirectUri: "https://nyusen.github.io/Save-Email-For-Training/auth-callback.html",
+    redirectUri: "https://localhost:3000/auth-callback.html",
     authEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
     tokenEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
     scopes: "openid profile email Mail.Read Mail.Send",
@@ -17,6 +17,8 @@ let idToken = null;
 // Make functions globally available
 window.validateBody = validateBody;
 window.saveForTraining = saveForTraining;
+window.setSendOnly = setSendOnly;
+window.setSendAndSave = setSendAndSave;
 
 Office.onReady(async (info) => {
     if (info.host) {
@@ -57,7 +59,7 @@ function handleSignIn() {
         // Generate code challenge
         generateCodeChallenge(codeVerifier).then(codeChallenge => {
             // Build the URL to our local sign-in start page
-            const startUrl = new URL('https://nyusen.github.io/Save-Email-For-Training/sign-in-start.html');
+            const startUrl = new URL('https://localhost:3000/sign-in-start.html');
             startUrl.searchParams.append('state', state);
             startUrl.searchParams.append('nonce', nonce);
             startUrl.searchParams.append('code_challenge', codeChallenge);
@@ -144,19 +146,20 @@ function base64URLEncode(buffer) {
 
 // Function to update UI based on sign-in state
 function updateUI(isSignedIn) {
-    const signInButton = document.getElementById('signInButton');
+    const signInSection = document.getElementById('signInSection');
+    const toggleSection = document.getElementById('toggleSection');
     const statusMessage = document.getElementById('statusMessage');
+    const signInButton = document.getElementById('signInButton');
+
     if (isSignedIn) {
-        signInButton.textContent = "Signed In";
-        signInButton.disabled = true;
-        statusMessage.textContent = "You're signed in and ready to use the add-in.";
+        signInButton.style.display = 'none';
+        toggleSection.style.display = 'block';
+        statusMessage.textContent = 'Signed in successfully';
     } else {
-        signInButton.textContent = "Sign in with Microsoft";
-        signInButton.disabled = false;
-        statusMessage.textContent = "Please sign in to use the add-in.";
+        signInButton.style.display = 'block';
+        toggleSection.style.display = 'none';
+        statusMessage.textContent = 'Please sign in to use the add-in';
     }
-    console.log(signInButton)
-    console.log(statusMessage)
 }
 
 // Function to make authenticated requests to your server
@@ -190,75 +193,86 @@ async function makeAuthenticatedRequest(url, options = {}) {
     return response.json();
 }
 
-// Entry point for Contoso Message Body Checker add-in before send is allowed.
+// Function to set send only option
+function setSendOnly(event) {
+    Office.context.mailbox.item.loadCustomPropertiesAsync((result) => {
+        const props = result.value;
+        props.set("saveForTraining", false);
+        props.saveAsync(() => {
+            event.completed();
+        });
+    });
+}
+
+// Function to set save and send option
+function setSendAndSave(event) {
+    Office.context.mailbox.item.loadCustomPropertiesAsync((result) => {
+        const props = result.value;
+        props.set("saveForTraining", true);
+        props.saveAsync((result) => {
+            console.log("Save and Send option set to " + props.get("saveForTraining").toString())
+            event.completed();
+        });
+    });
+};
+
+// Entry point for email send validation
 async function validateBody(event) {
     try {
-        // Show the initial save dialog first
-        Office.context.ui.displayDialogAsync('https://nyusen.github.io/Save-Email-For-Training/dialog.html', 
-            {height: 30, width: 20, displayInIframe: true},
-            async function (result) {
-                if (result.status === Office.AsyncResultStatus.Failed) {
-                    console.error(result.error.message);
-                    event.completed({ allowEvent: false });
-                    return;
-                }
-                
-                const dialog = result.value;
-                dialog.addEventHandler(Office.EventType.DialogMessageReceived, async function (arg) {
-                    dialog.close();
-                    if (arg.message === 'Send and Save') {
-                        // Check if user is signed in before saving
-                        if (!accessToken) {
-                            // Wait for the first dialog to fully close
-                            setTimeout(() => {
-                                console.log("Showing sign-in dialog");
-                                Office.context.ui.displayDialogAsync('https://nyusen.github.io/Save-Email-For-Training/signin-dialog.html', 
-                                    {height: 40, width: 30, displayInIframe: true},
-                                    function (signInResult) {
-                                        if (signInResult.status === Office.AsyncResultStatus.Failed) {
-                                            console.error(signInResult.error.message);
-                                            event.completed({ allowEvent: false });
-                                            return;
-                                        }
-
-                                        console.log("Listening for message");
-
-                                        const signInDialog = signInResult.value;
-                                        signInDialog.addEventHandler(Office.EventType.DialogMessageReceived, async function (signInArg) {
-                                            if (signInArg.message === 'signin') {
-                                                // User wants to sign in
-                                                signInDialog.close();
-                                                // Start the sign-in process
-                                                handleSignIn().then((token) => {
-                                                    // User is signed in, proceed with saving
-                                                    saveForTraining(event);
-                                                }).catch((error) => {
-                                                    console.error('Error signing in:', error);
-                                                    event.completed({ allowEvent: false });
-                                                });
-                                            } else if (signInArg.message === 'cancel') {
-                                                // User doesn't want to sign in
-                                                signInDialog.close();
-                                                event.completed({ allowEvent: false });
-                                            }
-                                        });
-                                    }
-                                );
-                            }, 500); // Wait 500ms for the first dialog to close
-                        } else {
-                            // User is already signed in, proceed with saving
-                            await saveForTraining(event);
-                        }
-                    } else {
-                        // User clicked Send Only
-                        event.completed({ allowEvent: true });
-                    }
-                });
+        // Load custom properties to check save setting
+        Office.context.mailbox.item.loadCustomPropertiesAsync(async (result) => {
+            const props = result.value;
+            const shouldSave = props.get("saveForTraining");
+            if (shouldSave === undefined) {
+                event.completed({ allowEvent: true })
             }
-        );
+            
+            if (!shouldSave) {
+                // If "Send Only" is selected, just send the email
+                event.completed({ allowEvent: true });
+                return;
+            }
+
+            // If "Save and Send" is selected but user is not signed in
+            if (!accessToken) {
+                // Show sign-in dialog
+                Office.context.ui.displayDialogAsync('https://localhost:3000/signin-dialog.html', 
+                    {height: 40, width: 30, displayInIframe: true},
+                    function (signInResult) {
+                        if (signInResult.status === Office.AsyncResultStatus.Failed) {
+                            console.error(signInResult.error.message);
+                            event.completed({ allowEvent: false });
+                            return;
+                        }
+
+                        const signInDialog = signInResult.value;
+                        signInDialog.addEventHandler(Office.EventType.DialogMessageReceived, async function (signInArg) {
+                            if (signInArg.message === 'signin') {
+                                // User wants to sign in
+                                signInDialog.close();
+                                handleSignIn().then(() => {
+                                    // User is signed in, proceed with saving
+                                    saveForTraining(event);
+                                }).catch((error) => {
+                                    console.error('Error signing in:', error);
+                                    event.completed({ allowEvent: false });
+                                });
+                            } else if (signInArg.message === 'cancel') {
+                                // User doesn't want to sign in
+                                signInDialog.close();
+                                event.completed({ allowEvent: false });
+                            }
+                        });
+                    }
+                );
+            } else {
+                // User is already signed in and wants to save, proceed with saving
+                await saveForTraining(event);
+            }
+        });
     } catch (error) {
-        console.error(error);
-        event.completed({ allowEvent: false });
+        console.error('Error in validateBody:', error);
+        event.completed({ allowEvent: true, errorMessage: "Failed to process email, but allowing send." });
     }
 }
 
@@ -294,7 +308,7 @@ async function saveForTraining(event) {
         console.error('Error:', error);
         // Show retry dialog with error message
         const errorMessage = encodeURIComponent(error.message || 'An unknown error occurred');
-        Office.context.ui.displayDialogAsync(`https://nyusen.github.io/Save-Email-For-Training/retry-dialog.html?error=${errorMessage}`, 
+        Office.context.ui.displayDialogAsync(`https://localhost:3000/retry-dialog.html?error=${errorMessage}`, 
             {height: 30, width: 20, displayInIframe: true},
             function (asyncResult) {
                 if (asyncResult.status === Office.AsyncResultStatus.Failed) {
