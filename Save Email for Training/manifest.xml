@@ -74,7 +74,7 @@
           <MobileFormFactor>
             <!-- The functionfile and function name to call on message send.  -->
             <!-- In this particular case the function validateBody will be called within the JavaScript code referenced in residUILessFunctionFileUrl. -->
-            <FunctionFile resid="residUILessFunctionFileUrl" />
+            <FunctionFile resid="residMobileUILessFunctionFileUrl" />
             <ExtensionPoint xsi:type="Events">
               <Event Type="ItemSend" FunctionExecution="asynchronous" FunctionName="validateBody" />
             </ExtensionPoint>
