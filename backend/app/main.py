@@ -148,15 +148,15 @@ async def persist_email_data(email_data: EmailData, request_metadata: Request):
         pool: SqlServerManagerPool = request_metadata.state.pool
         
         insert_email_query = """
-        insert into ds_experimentation.dbo.training_email_data (uuid, sender, recipients, subject, timestamp)
+        insert into ds_experimentation.dbo.training_email (uuid, sender, recipients, subject)
         output inserted.id
-        values (?, ?, ?, ?, ?)
+        values (?, ?, ?, ?)
         """
-        email_id = await pool.insert_sql(insert_email_query, (email_uuid, email_data.sender, ",".join(email_data.recipients), email_data.subject, email_data.timestamp), output=True)
+        email_id = await pool.insert_sql(insert_email_query, [(email_uuid, email_data.sender, ",".join(email_data.recipients), email_data.subject, email_data.timestamp)], output=True)
 
         if email_data.tags:
             insert_tag_query = """
-            insert into ds_experimentation.dbo.training_email_tags (email_id, tag_id)
+            insert into ds_experimentation.dbo.training_email_tag (email_id, tag_id)
             values (?, ?)
             """
             await pool.insert_sql(insert_tag_query, [(email_id, tag) for tag in email_data.tags])
@@ -183,20 +183,20 @@ async def persist_email_data(email_data: EmailData, request_metadata: Request):
 
 @app.get("/tag")
 async def get_tags(request_metadata: Request):
-    # pool: SqlServerManagerPool = request_metadata.state.pool
-    # tag_select_query = """
-    # select * from ds_experimentation.dbo.training_tags
-    # """
-    # tag_df: pd.DataFrame = await pool.select_sql(tag_select_query, ())
-    # tag_records = tag_df.to_dict(orient='records')
+    pool: SqlServerManagerPool = request_metadata.state.pool
+    tag_select_query = """
+    select * from ds_experimentation.dbo.training_tag
+    """
+    tag_df: pd.DataFrame = await pool.select_sql(tag_select_query, ())
+    tag_records = tag_df.to_dict(orient='records')
 
-    tags = [
-        {"id": 1, "description": "Pulse Report"},
-        {"id": 2, "description": "Internal Communication"},
-        {"id": 3, "description": "External Communication"},
-        {"id": 4, "description": "Playoff Preview"},
-        {"id": 5, "description": "Underwriting"},
-    ]
+    # tags = [
+    #     {"id": 1, "description": "Pulse Report"},
+    #     {"id": 2, "description": "Internal Communication"},
+    #     {"id": 3, "description": "External Communication"},
+    #     {"id": 4, "description": "Playoff Preview"},
+    #     {"id": 5, "description": "Underwriting"},
+    # ]
 
     return JSONResponse(content=tags, media_type="application/json")
     
