@@ -205,7 +205,7 @@ function _makeAuthenticatedRequest() {
       while (1) switch (_context3.prev = _context3.next) {
         case 0:
           options = _args3.length > 1 && _args3[1] !== undefined ? _args3[1] : {};
-          if (accessToken) {
+          if (idToken) {
             _context3.next = 3;
             break;
           }
