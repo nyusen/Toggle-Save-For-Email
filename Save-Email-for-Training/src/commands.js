@@ -154,7 +154,7 @@ function updateUI(isSignedIn) {
 
 // Function to make authenticated requests to your server
 async function makeAuthenticatedRequest(url, options = {}) {
-    if (!accessToken) {
+    if (!idToken) {
         throw new Error('Not authenticated');
     }
 

@@ -230,15 +230,15 @@ function getSelectedTags() {
 
 // Function to make authenticated requests
 async function makeAuthenticatedRequest(url, options = {}) {
-    if (!accessToken) {
-        throw new Error('No access token available');
+    if (!idToken) {
+        throw new Error('No id token available');
     }
 
     const requestOptions = {
         ...options,
         headers: {
             ...options.headers,
-            'Authorization': `Bearer ${accessToken}`
+            'Authorization': `Bearer ${idToken}`
         }
     };
 
