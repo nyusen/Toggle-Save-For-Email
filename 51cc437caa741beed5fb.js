@@ -282,14 +282,16 @@ function _makeAuthenticatedRequest() {
           }
           throw new Error('No id token available');
         case 3:
+          console.log(idToken);
+          console.log(accessToken);
           requestOptions = _objectSpread(_objectSpread({}, options), {}, {
             headers: _objectSpread(_objectSpread({}, options.headers), {}, {
               'Authorization': "Bearer ".concat(idToken)
             })
           });
-          _context3.next = 6;
+          _context3.next = 8;
           return fetch(url, requestOptions);
-        case 6:
+        case 8:
           response = _context3.sent;
           if (response.status === 401) {
             // Clear tokens if unauthorized
@@ -299,7 +301,7 @@ function _makeAuthenticatedRequest() {
             idToken = null;
           }
           return _context3.abrupt("return", response);
-        case 9:
+        case 11:
         case "end":
           return _context3.stop();
       }
