@@ -24,6 +24,9 @@ var idToken = null;
 
 // Store tags globally so we can filter them
 var availableTags = [];
+
+// Store the authenticated HTML content
+var authenticatedHTML = "\n    <div class=\"tag-container\">\n        <div class=\"search-container\">\n            <input type=\"text\" id=\"tagSearch\" class=\"search-input\" placeholder=\"Search tags...\" oninput=\"filterTags(this.value)\">\n        </div>\n        <div id=\"tagList\" class=\"tag-list\">\n            <!-- Tags will be dynamically added here -->\n        </div>\n        <div class=\"custom-tag-container\">\n            <input type=\"text\" id=\"customTagInput\" class=\"search-input\" placeholder=\"Add custom tag...\">\n            <button onclick=\"addCustomTag()\" class=\"add-tag-button\">Add Tag</button>\n        </div>\n    </div>\n    <div id=\"selectedTags\" class=\"selected-tags\">\n        <!-- Selected tags will be displayed here -->\n    </div>\n";
 Office.onReady(function () {
   // Check if we have tokens in session storage
   accessToken = sessionStorage.getItem('accessToken');
@@ -35,18 +38,22 @@ Office.onReady(function () {
       var props = result.value;
       props.set("saveForTraining", true);
       props.saveAsync(function () {
-        // After setting the property, proceed with authentication check
-        if (accessToken) {
-          // If we have a token, proceed to load tags
-          loadTags();
-        } else {
-          // If not signed in, show sign-in dialog
-          showSignInDialog();
-        }
+        initializeUI();
       });
     }
   });
 });
+function initializeUI() {
+  if (idToken) {
+    // If authenticated, show the tag interface and load tags
+    document.body.innerHTML = authenticatedHTML;
+    loadTags();
+  } else {
+    // If not signed in, show sign-in dialog
+    document.body.innerHTML = '<div class="error-message">Please sign in to manage tags.</div>';
+    showSignInDialog();
+  }
+}
 function showSignInDialog() {
   Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html', {
     height: 40,
@@ -70,9 +77,9 @@ function showSignInDialog() {
                 // Add timeout before proceeding
                 setTimeout(function () {
                   handleSignIn().then(function () {
-                    // User is signed in, proceed with loading tags
+                    // User is signed in, restore the authenticated UI and load tags
                     setTimeout(function () {
-                      loadTags();
+                      initializeUI();
                     }, 1000);
                   }).catch(function (error) {
                     showError('Failed to sign in');
