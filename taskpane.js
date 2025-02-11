@@ -450,7 +450,7 @@ function _addCustomTag() {
           }
           _context5.prev = 3;
           _context5.next = 6;
-          return fetch('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag', {
+          return makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
