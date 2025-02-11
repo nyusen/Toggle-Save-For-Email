@@ -18,7 +18,6 @@ let idToken = null;
 window.validateBody = validateBody;
 window.saveForTraining = saveForTraining;
 window.setSendOnly = setSendOnly;
-window.setSendAndSave = setSendAndSave;
 
 Office.onReady(async (info) => {
     if (info.host) {
@@ -204,18 +203,6 @@ function setSendOnly(event) {
     });
 }
 
-// Function to set save and send option
-function setSendAndSave(event) {
-    Office.context.mailbox.item.loadCustomPropertiesAsync((result) => {
-        const props = result.value;
-        props.set("saveForTraining", true);
-        props.saveAsync((result) => {
-            console.log("Save and Send option set to " + props.get("saveForTraining").toString())
-            event.completed();
-        });
-    });
-};
-
 // Entry point for email send validation
 async function validateBody(event) {
     try {
@@ -261,14 +248,14 @@ async function validateBody(event) {
                                 // User doesn't want to sign in
                                 signInDialog.close();
                                 event.completed({ allowEvent: false });
-                            }
+            }
                         });
                     }
                 );
-            } else {
+        } else {
                 // User is already signed in and wants to save, proceed with saving
                 await saveForTraining(event);
-            }
+        }
         });
     } catch (error) {
         console.error('Error in validateBody:', error);
@@ -278,55 +265,66 @@ async function validateBody(event) {
 
 async function saveForTraining(event) {
     console.log("Saving for Training");
-    try {
-        const item = Office.context.mailbox.item;
-        
-        // Get email data using promises
-        const [subject, body, sender, recipients] = await Promise.all([
-            new Promise((resolve) => item.subject.getAsync(resolve)),
-            new Promise((resolve) => item.body.getAsync('text', resolve)),
-            new Promise((resolve) => item.from.getAsync(resolve)),
-            new Promise((resolve) => item.to.getAsync(resolve))
-        ]);
-        
-        const emailData = {
-            subject: subject.value,
-            body: body.value,
-            sender: sender.value.emailAddress,
-            recipients: recipients.value.map(r => r.emailAddress),
-            timestamp: new Date().toISOString()
-        };
 
-        // Make authenticated request to your server
-        await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/save-email', {
-            method: 'POST',
-            body: JSON.stringify(emailData)
-        });
+    const item = Office.context.mailbox.item;
+    item.loadCustomPropertiesAsync(async (result) => {
+        try {
+            const customProperties = result.value;
+            let tags = JSON.parse(customProperties.get('selectedTags')) || [];
 
-        event.completed({ allowEvent: true });
-    } catch (error) {
-        console.error('Error:', error);
-        // Show retry dialog with error message
-        const errorMessage = encodeURIComponent(error.message || 'An unknown error occurred');
-        Office.context.ui.displayDialogAsync(`https://localhost:3000/retry-dialog.html?error=${errorMessage}`, 
-            {height: 30, width: 20, displayInIframe: true},
-            function (asyncResult) {
-                if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-                    console.error(asyncResult.error.message);
-                    event.completed({ allowEvent: false });
-                    return;
-                }
-                
-                const dialog = asyncResult.value;
-                dialog.addEventHandler(Office.EventType.DialogMessageReceived, function (arg) {
-                    dialog.close();
-                    if (arg.message === 'retry') {
-                        saveForTraining(event);
-                    } else {
-                        event.completed({ allowEvent: true });
+            // Get email data using promises
+            const [subject, body, sender, recipients] = await Promise.all([
+                new Promise((resolve) => item.subject.getAsync(resolve)),
+                new Promise((resolve) => item.body.getAsync('text', resolve)),
+                new Promise((resolve) => item.from.getAsync(resolve)),
+                new Promise((resolve) => item.to.getAsync(resolve)),
+            ]);
+            
+            const emailData = {
+                subject: subject.value,
+                body: body.value,
+                sender: sender.value.emailAddress,
+                recipients: recipients.value.map(r => r.emailAddress),
+                tags: tags,
+                timestamp: new Date().toISOString(),
+            };
+    
+            console.log(emailData);
+    
+            // Make authenticated request to your server
+            await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/save-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(emailData)
+            });
+    
+            event.completed({ allowEvent: true });
+        } catch (error) {
+            console.error('Error:', error);
+            // Show retry dialog with error message
+            const errorMessage = encodeURIComponent(error.message || 'An unknown error occurred');
+            Office.context.ui.displayDialogAsync(`https://localhost:3000/retry-dialog.html?error=${errorMessage}`, 
+                {height: 30, width: 20, displayInIframe: true},
+                function (asyncResult) {
+                    if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+                        console.error(asyncResult.error.message);
+                        event.completed({ allowEvent: false });
+                        return;
                     }
-                });
-            }
-        );
-    }
+                    
+                    const dialog = asyncResult.value;
+                    dialog.addEventHandler(Office.EventType.DialogMessageReceived, function (arg) {
+                        dialog.close();
+                        if (arg.message === 'retry') {
+                            saveForTraining(event);
+                        } else {
+                            event.completed({ allowEvent: true });
+                        }
+                    });
+                }
+            );
+        }
+    })
 }

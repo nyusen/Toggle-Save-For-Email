@@ -111,5 +111,6 @@ deploymentLabels:
   app-version: "0.0.1"
 serviceAccountName: argo-workflow
 configs:
+  ENV: "dev"
   BLOB_URL: "https://eviestrgstrdev01.blob.core.windows.net"
   AZURE_STORAGE_CONTAINER_NAME: "corpus-collector-data"

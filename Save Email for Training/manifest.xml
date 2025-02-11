@@ -101,8 +101,8 @@
                           <Title resid="sendAndSaveTitle" />
                           <Description resid="sendAndSaveDesc" />
                         </Supertip>
-                        <Action xsi:type="ExecuteFunction">
-                          <FunctionName>setSendAndSave</FunctionName>
+                        <Action xsi:type="ShowTaskpane">
+                          <SourceLocation resid="tagTaskpaneUrl" />
                         </Action>
                       </Item>
                     </Items>
@@ -135,6 +135,7 @@
           <!-- The JavaScript code is hosted on a secure and trusted web server. -->
           <bt:Url id="residUILessFunctionFileUrl" DefaultValue="https://localhost:3000/commands.html" />
           <bt:Url id="residMobileUILessFunctionFileUrl" DefaultValue="https://localhost:3000/commands.html" />
+          <bt:Url id="tagTaskpaneUrl" DefaultValue="https://localhost:3000/tag-taskpane.html" />
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="groupLabel" DefaultValue="Save Options" />
