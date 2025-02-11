@@ -77,6 +77,14 @@ class EmailData(BaseModel):
 class Tag(BaseModel):
     description: str
 
+class EmailFilter(BaseModel):
+    sender: Optional[str] = None
+    subject_contains: Optional[str] = None
+    recipients_contains: Optional[str] = None
+    tags: Optional[List[int]] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
 def get_ms_public_keys():
     """Fetch Microsoft's public keys for token validation"""
     try:
@@ -182,7 +190,7 @@ async def persist_email_data(email_data: EmailData, request_metadata: Request):
         raise
 
 @app.get("/tag")
-async def get_tags(request_metadata: Request):
+async def get_tags(request_metadata: Request, user_claims: dict = Depends(verify_user)):
     pool: SqlServerManagerPool = request_metadata.state.pool
     tag_select_query = """
     select * from ds_experimentation.dbo.training_tag
@@ -190,19 +198,11 @@ async def get_tags(request_metadata: Request):
     tag_df: pd.DataFrame = await pool.select_sql(tag_select_query, ())
     tag_records = tag_df.to_dict(orient='records')
 
-    # tags = [
-    #     {"id": 1, "description": "Pulse Report"},
-    #     {"id": 2, "description": "Internal Communication"},
-    #     {"id": 3, "description": "External Communication"},
-    #     {"id": 4, "description": "Playoff Preview"},
-    #     {"id": 5, "description": "Underwriting"},
-    # ]
-
     return JSONResponse(content=tag_records, media_type="application/json")
     
 
 @app.post("/tag")
-async def create_tag(tag: Tag, request_metadata: Request,):
+async def create_tag(tag: Tag, request_metadata: Request, user_claims: dict = Depends(verify_user)):
     pool: SqlServerManagerPool = request_metadata.state.pool
     insert_tag_query = """
     insert into ds_experimentation.dbo.training_tag (description)
@@ -226,6 +226,75 @@ async def save_email(
         status_code=202,
         content={"message": "Email is saving to blob"},
     )
+
+@app.post("/emails/filter")
+async def filter_emails(
+    filter_params: EmailFilter,
+    request_metadata: Request,
+    user_claims: dict = Depends(verify_user)
+) -> List[dict]:
+    try:
+        pool: SqlServerManagerPool = request_metadata.state.pool
+        
+        # Start building the query
+        query = """
+        SELECT DISTINCT e.id, e.uuid, e.sender, e.recipients, e.subject
+        FROM ds_experimentation.dbo.training_email e
+        """
+        
+        # Add tag join if needed
+        if filter_params.tags:
+            query += """
+            INNER JOIN ds_experimentation.dbo.training_email_tag et ON e.id = et.email_id
+            """
+        
+        # Build WHERE clause
+        conditions = []
+        params = []
+        
+        if filter_params.sender:
+            conditions.append("e.sender LIKE ?")
+            params.append(f"%{filter_params.sender}%")
+            
+        if filter_params.subject_contains:
+            conditions.append("e.subject LIKE ?")
+            params.append(f"%{filter_params.subject_contains}%")
+            
+        if filter_params.recipients_contains:
+            conditions.append("e.recipients LIKE ?")
+            params.append(f"%{filter_params.recipients_contains}%")
+            
+        if filter_params.tags:
+            placeholders = ','.join(['?' for _ in filter_params.tags])
+            conditions.append(f"et.tag_id IN ({placeholders})")
+            params.extend(filter_params.tags)
+            
+        if filter_params.start_date:
+            conditions.append("e.timestamp >= ?")
+            params.append(filter_params.start_date)
+            
+        if filter_params.end_date:
+            conditions.append("e.timestamp <= ?")
+            params.append(filter_params.end_date)
+            
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+            
+        # Execute query
+        df = await pool.select_sql(query, params)
+        results = df.to_dict(orient='records')
+        
+        return JSONResponse(
+            content=results,
+            media_type="application/json"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error filtering emails: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error filtering emails: {str(e)}"
+        )
 
 @app.get("/health")
 async def health_check():

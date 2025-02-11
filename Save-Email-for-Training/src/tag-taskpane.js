@@ -372,7 +372,7 @@ async function addCustomTag() {
     if (description) {
         try {
             // Make API call to get tag ID
-            const response = await fetch('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag', {
+            const response = await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
