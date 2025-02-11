@@ -29,7 +29,7 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 
 var config = {
   clientId: "6d7e781e-9cf5-48ff-8c05-b697ca1a90e3",
-  redirectUri: "https://localhost:3000/auth-callback.html",
+  redirectUri: "https://nyusen.github.io/Save-Email-For-Training/auth-callback.html",
   authEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
   tokenEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
   scopes: "openid profile email Mail.Read Mail.Send"
@@ -72,7 +72,6 @@ Office.onReady(/*#__PURE__*/function () {
 
 // Function to handle sign-in button click
 function handleSignIn() {
-  console.log("Handle sign in called");
   return new Promise(function (resolve, reject) {
     // Generate random state and PKCE verifier
     var state = generateRandomString(32);
@@ -82,16 +81,11 @@ function handleSignIn() {
     // Store state and code verifier in parent window's session storage
     window.sessionStorage.setItem('authState', state);
     window.sessionStorage.setItem('codeVerifier', codeVerifier);
-    console.log('Generated values:', {
-      state: state,
-      codeVerifier: '[GENERATED]',
-      nonce: nonce
-    });
 
     // Generate code challenge
     generateCodeChallenge(codeVerifier).then(function (codeChallenge) {
       // Build the URL to our local sign-in start page
-      var startUrl = new URL('https://localhost:3000/sign-in-start.html');
+      var startUrl = new URL('https://nyusen.github.io/Save-Email-For-Training/sign-in-start.html');
       startUrl.searchParams.append('state', state);
       startUrl.searchParams.append('nonce', nonce);
       startUrl.searchParams.append('code_challenge', codeChallenge);
@@ -100,7 +94,6 @@ function handleSignIn() {
 
       // Add delay before opening the auth dialog
       setTimeout(function () {
-        console.log("Opening auth dialog: " + startUrl.toString());
         // Open our local page in a dialog, which will then redirect to Microsoft
         Office.context.ui.displayDialogAsync(startUrl.toString(), {
           height: 60,
@@ -113,7 +106,6 @@ function handleSignIn() {
           }
           var dialog = result.value;
           dialog.addEventHandler(Office.EventType.DialogMessageReceived, function (arg) {
-            console.log("Received message from auth dialog: " + arg.message);
             try {
               var message = JSON.parse(arg.message);
               if (message.type === 'token') {
@@ -308,7 +300,7 @@ function _validateBody() {
                         break;
                       }
                       // Show sign-in dialog
-                      Office.context.ui.displayDialogAsync('https://localhost:3000/signin-dialog.html', {
+                      Office.context.ui.displayDialogAsync('https://nyusen.github.io/Save-Email-For-Training/signin-dialog.html', {
                         height: 40,
                         width: 30,
                         displayInIframe: true
@@ -395,7 +387,6 @@ function _saveForTraining() {
     return _regeneratorRuntime().wrap(function _callee8$(_context8) {
       while (1) switch (_context8.prev = _context8.next) {
         case 0:
-          console.log("Saving for Training");
           item = Office.context.mailbox.item;
           item.loadCustomPropertiesAsync(/*#__PURE__*/function () {
             var _ref4 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee7(result) {
@@ -434,11 +425,8 @@ function _saveForTraining() {
                         return tag.id;
                       }),
                       timestamp: new Date().toISOString()
-                    };
-                    console.log(emailData);
-
-                    // Make authenticated request to your server
-                    _context7.next = 15;
+                    }; // Make authenticated request to your server
+                    _context7.next = 14;
                     return makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/save-email', {
                       method: 'POST',
                       headers: {
@@ -446,19 +434,19 @@ function _saveForTraining() {
                       },
                       body: JSON.stringify(emailData)
                     });
-                  case 15:
+                  case 14:
                     event.completed({
                       allowEvent: true
                     });
-                    _context7.next = 23;
+                    _context7.next = 22;
                     break;
-                  case 18:
-                    _context7.prev = 18;
+                  case 17:
+                    _context7.prev = 17;
                     _context7.t0 = _context7["catch"](0);
                     console.error('Error:', _context7.t0);
                     // Show retry dialog with error message
                     errorMessage = encodeURIComponent(_context7.t0.message || 'An unknown error occurred');
-                    Office.context.ui.displayDialogAsync("https://localhost:3000/retry-dialog.html?error=".concat(errorMessage), {
+                    Office.context.ui.displayDialogAsync("https://nyusen.github.io/Save-Email-For-Training/retry-dialog.html?error=".concat(errorMessage), {
                       height: 30,
                       width: 20,
                       displayInIframe: true
@@ -482,17 +470,17 @@ function _saveForTraining() {
                         }
                       });
                     });
-                  case 23:
+                  case 22:
                   case "end":
                     return _context7.stop();
                 }
-              }, _callee7, null, [[0, 18]]);
+              }, _callee7, null, [[0, 17]]);
             }));
             return function (_x8) {
               return _ref4.apply(this, arguments);
             };
           }());
-        case 3:
+        case 2:
         case "end":
           return _context8.stop();
       }
