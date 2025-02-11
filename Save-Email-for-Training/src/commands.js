@@ -5,7 +5,7 @@
 
 const config = {
     clientId: "6d7e781e-9cf5-48ff-8c05-b697ca1a90e3",
-    redirectUri: "https://localhost:3000/auth-callback.html",
+    redirectUri: "https://nyusen.github.io/Save-Email-For-Training/auth-callback.html",
     authEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
     tokenEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
     scopes: "openid profile email Mail.Read Mail.Send",
@@ -38,7 +38,6 @@ Office.onReady(async (info) => {
 
 // Function to handle sign-in button click
 function handleSignIn() {
-    console.log("Handle sign in called");
     return new Promise((resolve, reject) => {
         // Generate random state and PKCE verifier
         const state = generateRandomString(32);
@@ -49,16 +48,10 @@ function handleSignIn() {
         window.sessionStorage.setItem('authState', state);
         window.sessionStorage.setItem('codeVerifier', codeVerifier);
 
-        console.log('Generated values:', {
-            state: state,
-            codeVerifier: '[GENERATED]',
-            nonce: nonce
-        });
-
         // Generate code challenge
         generateCodeChallenge(codeVerifier).then(codeChallenge => {
             // Build the URL to our local sign-in start page
-            const startUrl = new URL('https://localhost:3000/sign-in-start.html');
+            const startUrl = new URL('https://nyusen.github.io/Save-Email-For-Training/sign-in-start.html');
             startUrl.searchParams.append('state', state);
             startUrl.searchParams.append('nonce', nonce);
             startUrl.searchParams.append('code_challenge', codeChallenge);
@@ -67,7 +60,6 @@ function handleSignIn() {
             
             // Add delay before opening the auth dialog
             setTimeout(() => {
-                console.log("Opening auth dialog: " + startUrl.toString());
                 // Open our local page in a dialog, which will then redirect to Microsoft
                 Office.context.ui.displayDialogAsync(startUrl.toString(), 
                     {height: 60, width: 30}, 
@@ -80,7 +72,6 @@ function handleSignIn() {
 
                         const dialog = result.value;
                         dialog.addEventHandler(Office.EventType.DialogMessageReceived, function(arg) {
-                            console.log("Received message from auth dialog: " + arg.message);
                             try {
                                 const message = JSON.parse(arg.message);
                                 if (message.type === 'token') {
@@ -223,7 +214,7 @@ async function validateBody(event) {
             // If "Save and Send" is selected but user is not signed in
             if (!accessToken) {
                 // Show sign-in dialog
-                Office.context.ui.displayDialogAsync('https://localhost:3000/signin-dialog.html', 
+                Office.context.ui.displayDialogAsync('https://nyusen.github.io/Save-Email-For-Training/signin-dialog.html', 
                     {height: 40, width: 30, displayInIframe: true},
                     function (signInResult) {
                         if (signInResult.status === Office.AsyncResultStatus.Failed) {
@@ -264,8 +255,6 @@ async function validateBody(event) {
 }
 
 async function saveForTraining(event) {
-    console.log("Saving for Training");
-
     const item = Office.context.mailbox.item;
     item.loadCustomPropertiesAsync(async (result) => {
         try {
@@ -288,9 +277,7 @@ async function saveForTraining(event) {
                 tags: tags.map(tag => tag.id),
                 timestamp: new Date().toISOString(),
             };
-    
-            console.log(emailData);
-    
+        
             // Make authenticated request to your server
             await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/save-email', {
                 method: 'POST',
@@ -305,7 +292,7 @@ async function saveForTraining(event) {
             console.error('Error:', error);
             // Show retry dialog with error message
             const errorMessage = encodeURIComponent(error.message || 'An unknown error occurred');
-            Office.context.ui.displayDialogAsync(`https://localhost:3000/retry-dialog.html?error=${errorMessage}`, 
+            Office.context.ui.displayDialogAsync(`https://nyusen.github.io/Save-Email-For-Training/retry-dialog.html?error=${errorMessage}`, 
                 {height: 30, width: 20, displayInIframe: true},
                 function (asyncResult) {
                     if (asyncResult.status === Office.AsyncResultStatus.Failed) {

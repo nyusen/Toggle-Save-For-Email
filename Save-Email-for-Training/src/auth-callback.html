@@ -13,12 +13,12 @@
             const error = urlParams.get('error');
             const errorDescription = urlParams.get('error_description');
 
-            console.log('Auth callback received:', {
-                code: code ? '[PRESENT]' : '[MISSING]',
-                state: state,
-                error: error,
-                errorDescription: errorDescription
-            });
+            // console.log('Auth callback received:', {
+            //     code: code ? '[PRESENT]' : '[MISSING]',
+            //     state: state,
+            //     error: error,
+            //     errorDescription: errorDescription
+            // });
 
             if (error) {
                 console.error('Auth error:', error, errorDescription);
@@ -41,11 +41,6 @@
             // Get stored state from session storage
             const storedState = window.sessionStorage.getItem('authState');
             const storedCodeVerifier = window.sessionStorage.getItem('codeVerifier');
-            
-            console.log('Stored values:', {
-                state: storedState,
-                codeVerifier: storedCodeVerifier ? '[PRESENT]' : '[MISSING]'
-            });
 
             if (state !== storedState) {
                 console.error('State mismatch. Received:', state, 'Stored:', storedState);
@@ -71,7 +66,7 @@
                         client_id: '6d7e781e-9cf5-48ff-8c05-b697ca1a90e3',
                         grant_type: 'authorization_code',
                         code: code,
-                        redirect_uri: 'https://localhost:3000/auth-callback.html',
+                        redirect_uri: 'https://nyusen.github.io/Save-Email-For-Training/auth-callback.html',
                         code_verifier: storedCodeVerifier
                     })
                 });
