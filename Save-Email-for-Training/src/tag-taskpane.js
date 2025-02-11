@@ -234,6 +234,9 @@ async function makeAuthenticatedRequest(url, options = {}) {
         throw new Error('No id token available');
     }
 
+    console.log(idToken);
+    console.log(accessToken);
+
     const requestOptions = {
         ...options,
         headers: {
