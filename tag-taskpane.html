@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <title>Tag Selection</title>
+
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+    
+    <!-- Add authentication config before the taskpane JS -->
+    <script type="text/javascript">
+        const config = {
+            clientId: "6d7e781e-9cf5-48ff-8c05-b697ca1a90e3",
+            redirectUri: "https://localhost:3000/auth-callback.html",
+            authEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+            tokenEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            scopes: "openid profile email Mail.Read Mail.Send",
+        };
+    </script>
+    
+    <script type="text/javascript" src="c9751d61e0644978559a.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 20px;
+        }
+        .tag-container {
+            margin-bottom: 20px;
+        }
+        .search-container {
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+        .tag-list {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        .tag-item {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+        .tag-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .tag-item label {
+            flex: 1;
+            cursor: pointer;
+        }
+        .custom-tag-input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .selected-tags {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .selected-tag {
+            display: inline-block;
+            background: #e0e0e0;
+            padding: 4px 8px;
+            margin: 4px;
+            border-radius: 4px;
+        }
+        .remove-tag {
+            margin-left: 6px;
+            cursor: pointer;
+            color: #666;
+        }
+        .error-message {
+            color: red;
+            padding: 20px;
+            text-align: center;
+        }
+        .sign-in-button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .sign-in-button:hover {
+            background-color: #106ebe;
+        }
+        /* Add styles for when no results are found */
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+<script defer src="polyfill.js"></script><script defer src="taskpane.js"></script></head>
+<body>
+    <div class="tag-container">
+        <h3>Available Tags</h3>
+        <div class="search-container">
+            <input type="text" 
+                   id="tagSearch" 
+                   class="search-input" 
+                   placeholder="Search tags..."
+                   oninput="filterTags(this.value)">
+        </div>
+        <div id="tagList" class="tag-list">
+            <!-- Tags will be populated here -->
+        </div>
+        
+        <h3>Add Custom Tag</h3>
+        <input type="text" id="customTagInput" class="custom-tag-input" placeholder="Enter a custom tag">
+        <button onclick="addCustomTag()">Add Tag</button>
+
+        <h3>Selected Tags</h3>
+        <div id="selectedTags" class="selected-tags">
+            <!-- Selected tags will appear here -->
+        </div>
+    </div>
+</body>
+</html>

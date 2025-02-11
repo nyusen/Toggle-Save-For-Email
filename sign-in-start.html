@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+    <script>
+        Office.onReady(() => {
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const state = urlParams.get('state');
+            const nonce = urlParams.get('nonce');
+            const codeChallenge = urlParams.get('code_challenge');
+            const codeChallengeMethod = urlParams.get('code_challenge_method');
+            const codeVerifier = urlParams.get('code_verifier');
+
+            console.log('Received params:', {
+                state,
+                nonce,
+                codeChallenge,
+                codeChallengeMethod,
+                codeVerifier: codeVerifier ? '[PRESENT]' : '[MISSING]'
+            });
+
+            // Store state and code verifier in this window's session storage
+            if (state) {
+                window.sessionStorage.setItem('authState', state);
+            }
+            if (codeVerifier) {
+                window.sessionStorage.setItem('codeVerifier', codeVerifier);
+            }
+
+            // Build authorization URL
+            const authUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+            authUrl.searchParams.append('client_id', '6d7e781e-9cf5-48ff-8c05-b697ca1a90e3');
+            authUrl.searchParams.append('response_type', 'code');
+            authUrl.searchParams.append('redirect_uri', 'https://localhost:3000/auth-callback.html');
+            authUrl.searchParams.append('scope', 'openid profile email offline_access');
+            authUrl.searchParams.append('state', state);
+            authUrl.searchParams.append('nonce', nonce);
+            authUrl.searchParams.append('code_challenge', codeChallenge);
+            authUrl.searchParams.append('code_challenge_method', codeChallengeMethod);
+            authUrl.searchParams.append('response_mode', 'query');
+
+            console.log("Redirecting to:", authUrl.toString());
+            // Redirect to Microsoft login
+            window.location.href = authUrl.toString();
+        });
+    </script>
+<script defer src="polyfill.js"></script></head>
+<body>
+    <p>Redirecting to Microsoft sign-in...</p>
+</body>
+</html>
