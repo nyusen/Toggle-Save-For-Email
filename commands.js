@@ -29,7 +29,7 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 
 var config = {
   clientId: "6d7e781e-9cf5-48ff-8c05-b697ca1a90e3",
-  redirectUri: "https://nyusen.github.io/Save-Email-For-Training/auth-callback.html",
+  redirectUri: "https://nyusen.github.io/Toggle-Save-For-Email/auth-callback.html",
   authEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
   tokenEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
   scopes: "openid profile email Mail.Read Mail.Send"
@@ -85,7 +85,7 @@ function handleSignIn() {
     // Generate code challenge
     generateCodeChallenge(codeVerifier).then(function (codeChallenge) {
       // Build the URL to our local sign-in start page
-      var startUrl = new URL('https://nyusen.github.io/Save-Email-For-Training/sign-in-start.html');
+      var startUrl = new URL('https://nyusen.github.io/Toggle-Save-For-Email/sign-in-start.html');
       startUrl.searchParams.append('state', state);
       startUrl.searchParams.append('nonce', nonce);
       startUrl.searchParams.append('code_challenge', codeChallenge);
@@ -300,7 +300,7 @@ function _validateBody() {
                         break;
                       }
                       // Show sign-in dialog
-                      Office.context.ui.displayDialogAsync('https://nyusen.github.io/Save-Email-For-Training/signin-dialog.html', {
+                      Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html', {
                         height: 40,
                         width: 30,
                         displayInIframe: true
@@ -446,7 +446,7 @@ function _saveForTraining() {
                     console.error('Error:', _context7.t0);
                     // Show retry dialog with error message
                     errorMessage = encodeURIComponent(_context7.t0.message || 'An unknown error occurred');
-                    Office.context.ui.displayDialogAsync("https://nyusen.github.io/Save-Email-For-Training/retry-dialog.html?error=".concat(errorMessage), {
+                    Office.context.ui.displayDialogAsync("https://nyusen.github.io/Toggle-Save-For-Email/retry-dialog.html?error=".concat(errorMessage), {
                       height: 30,
                       width: 20,
                       displayInIframe: true

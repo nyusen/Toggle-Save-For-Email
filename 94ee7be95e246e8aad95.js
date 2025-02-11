@@ -43,7 +43,7 @@ Office.onReady(function () {
   });
 });
 function showSignInDialog() {
-  Office.context.ui.displayDialogAsync('https://nyusen.github.io/Save-Email-For-Training/signin-dialog.html', {
+  Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html', {
     height: 40,
     width: 30,
     displayInIframe: true
@@ -108,7 +108,7 @@ function handleSignIn() {
     // Generate code challenge
     generateCodeChallenge(codeVerifier).then(function (codeChallenge) {
       // Build the URL to our local sign-in start page
-      var startUrl = new URL('https://nyusen.github.io/Save-Email-For-Training/sign-in-start.html');
+      var startUrl = new URL('https://nyusen.github.io/Toggle-Save-For-Email/sign-in-start.html');
       startUrl.searchParams.append('state', state);
       startUrl.searchParams.append('nonce', nonce);
       startUrl.searchParams.append('code_challenge', codeChallenge);
