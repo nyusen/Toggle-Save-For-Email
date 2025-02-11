@@ -152,7 +152,7 @@ async def persist_email_data(email_data: EmailData, request_metadata: Request):
         output inserted.id
         values (?, ?, ?, ?)
         """
-        email_id = await pool.insert_sql(insert_email_query, [(email_uuid, email_data.sender, ",".join(email_data.recipients), email_data.subject, email_data.timestamp)], output=True)
+        email_id = await pool.insert_sql(insert_email_query, [(email_uuid, email_data.sender, ",".join(email_data.recipients), email_data.subject)], output=True)
 
         if email_data.tags:
             insert_tag_query = """
@@ -198,19 +198,20 @@ async def get_tags(request_metadata: Request):
     #     {"id": 5, "description": "Underwriting"},
     # ]
 
-    return JSONResponse(content=tags, media_type="application/json")
+    return JSONResponse(content=tag_records, media_type="application/json")
     
 
 @app.post("/tag")
 async def create_tag(tag: Tag, request_metadata: Request,):
     pool: SqlServerManagerPool = request_metadata.state.pool
     insert_tag_query = """
-    insert into ds_experimentation.dbo.training_tags (description)
+    insert into ds_experimentation.dbo.training_tag (description)
     output inserted.id
     values (?)
     """
 
-    inserted_id = (await pool.insert_sql(insert_tag_query, (tag.description,), output=True))['id'][0]
+    inserted_id = await pool.insert_sql(insert_tag_query, [(tag.description,)], output=True)
+    logger.info(f"Inserted tag with ID: {inserted_id}")
     return JSONResponse(content={"id": inserted_id, "description": tag.description}, media_type="application/json")
     
 @app.post("/save-email")

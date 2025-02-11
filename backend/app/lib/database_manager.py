@@ -197,8 +197,9 @@ class SqlServerManagerPool:
                         return new_id[0] if new_id else None
                     await conn.commit()            
                     logger.info('Committing Transaction.')
-                except:
+                except Exception as e:
                     await conn.rollback()
+                    logger.error(e)
                     logger.error('Failed to execute insert query. Rolling back.')
 
     async def insert_dynamic_sql(

@@ -285,7 +285,7 @@ async function saveForTraining(event) {
                 body: body.value,
                 sender: sender.value.emailAddress,
                 recipients: recipients.value.map(r => r.emailAddress),
-                tags: tags,
+                tags: tags.map(tag => tag.id),
                 timestamp: new Date().toISOString(),
             };
     

@@ -16,7 +16,6 @@ Office.onReady(() => {
             const props = result.value;
             props.set("saveForTraining", true);
             props.saveAsync(() => {
-                console.log("Save and Send option set to true");
                 
                 // After setting the property, proceed with authentication check
                 if (accessToken) {
@@ -50,12 +49,10 @@ function showSignInDialog() {
                     setTimeout(() => {
                         handleSignIn().then(() => {
                             // User is signed in, proceed with loading tags
-                            console.log("Signed in");
                             setTimeout(() => {
                                 loadTags();
                             }, 1000);
                         }).catch((error) => {
-                            console.error('Error signing in:', error);
                             showError('Failed to sign in');
                         });
                     }, 1000);
@@ -73,7 +70,6 @@ function showSignInDialog() {
 
 // Function to handle sign-in
 function handleSignIn() {
-    console.log("Handle sign in called");
     return new Promise((resolve, reject) => {
         // Generate random state and PKCE verifier
         const state = generateRandomString(32);
@@ -83,12 +79,6 @@ function handleSignIn() {
         // Store state and code verifier in parent window's session storage
         window.sessionStorage.setItem('authState', state);
         window.sessionStorage.setItem('codeVerifier', codeVerifier);
-
-        console.log('Generated values:', {
-            state: state,
-            codeVerifier: '[GENERATED]',
-            nonce: nonce
-        });
 
         // Generate code challenge
         generateCodeChallenge(codeVerifier).then(codeChallenge => {
@@ -102,7 +92,6 @@ function handleSignIn() {
             
             // Add delay before opening the auth dialog
             setTimeout(() => {
-                console.log("Opening auth dialog: " + startUrl.toString());
                 // Open our local page in a dialog, which will then redirect to Microsoft
                 Office.context.ui.displayDialogAsync(startUrl.toString(), 
                     {height: 60, width: 30}, 
@@ -115,7 +104,6 @@ function handleSignIn() {
 
                         const dialog = result.value;
                         dialog.addEventHandler(Office.EventType.DialogMessageReceived, function(arg) {
-                            console.log("Received message from auth dialog: " + arg.message);
                             try {
                                 const message = JSON.parse(arg.message);
                                 if (message.type === 'token') {
@@ -133,7 +121,6 @@ function handleSignIn() {
                                     reject(new Error(message.error));
                                 }
                             } catch (e) {
-                                console.error('Error parsing message:', e);
                                 dialog.close();
                                 reject(e);
                             }
@@ -184,12 +171,28 @@ function displayFilteredTags(tags) {
         return;
     }
     
-    tagList.innerHTML = tags.map(tag => `
-        <div class="tag-item">
-            <input type="checkbox" id="tag-${tag.id}" value="${tag.id}" onchange="handleTagSelection(this)">
-            <label for="tag-${tag.id}">${tag.description}</label>
-        </div>
-    `).join('');
+    // Get currently selected tags from custom properties
+    Office.context.mailbox.item.loadCustomPropertiesAsync((result) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+            const props = result.value;
+            let selectedTags = props.get('selectedTags') || [];
+            if (typeof selectedTags === 'string') {
+                selectedTags = JSON.parse(selectedTags);
+            }
+            
+            // Create tag list with checked state preserved
+            tagList.innerHTML = tags.map(tag => {
+                const isChecked = selectedTags.some(selectedTag => selectedTag.id === tag.id);
+                return `
+                    <div class="tag-item">
+                        <input type="checkbox" id="tag-${tag.id}" value="${tag.id}" 
+                            onchange="handleTagSelection(this)" ${isChecked ? 'checked' : ''}>
+                        <label for="tag-${tag.id}">${tag.description}</label>
+                    </div>
+                `;
+            }).join('');
+        }
+    });
 }
 
 // Function to filter tags based on search input
@@ -206,8 +209,8 @@ function filterTags(searchText) {
     
     // Restore checked state for selected tags
     const selectedTags = getSelectedTags();
-    selectedTags.forEach(tagId => {
-        const checkbox = document.getElementById(`tag-${tagId}`);
+    selectedTags.forEach(tag => {
+        const checkbox = document.getElementById(`tag-${tag.id}`);
         if (checkbox) {
             checkbox.checked = true;
         }
@@ -218,7 +221,11 @@ function filterTags(searchText) {
 function getSelectedTags() {
     const selectedTagsContainer = document.getElementById('selectedTags');
     return Array.from(selectedTagsContainer.getElementsByClassName('selected-tag'))
-        .map(tag => parseInt(tag.dataset.tagId));
+        .map(tagElement => {
+            const tagId = parseInt(tagElement.dataset.tagId);
+            return availableTags.find(tag => tag.id === tagId);
+        })
+        .filter(tag => tag); // Remove any undefined entries
 }
 
 // Function to make authenticated requests
@@ -282,6 +289,7 @@ function handleTagSelection(checkbox) {
             const tagElement = document.createElement('span');
             tagElement.className = 'selected-tag';
             tagElement.dataset.tagId = selectedTag.id;
+            tagElement.dataset.description = selectedTag.description; // Store description for getSelectedTags
             tagElement.innerHTML = `
                 ${selectedTag.description}
                 <span class="remove-tag" onclick="removeTag('${selectedTag.id}')">&times;</span>
@@ -326,7 +334,6 @@ function saveSelectedTags() {
             const props = result.value;
             const selectedTags = getSelectedTags();
             props.set("selectedTags", JSON.stringify(selectedTags));
-            console.log(JSON.stringify(selectedTags));
             props.saveAsync();
         }
     });
@@ -341,8 +348,8 @@ function loadSelectedTags() {
             if (savedTags) {
                 try {
                     const selectedTagIds = JSON.parse(savedTags);
-                    selectedTagIds.forEach(tagId => {
-                        const checkbox = document.getElementById(`tag-${tagId}`);
+                    selectedTagIds.forEach(tag => {
+                        const checkbox = document.getElementById(`tag-${tag.id}`);
                         if (checkbox) {
                             checkbox.checked = true;
                             // Trigger the selection handler to update the UI
@@ -383,6 +390,9 @@ async function addCustomTag() {
                 description: description
             };
 
+            // Add the new tag to availableTags
+            availableTags.push(tagObject);
+
             // Store the tag object in custom properties
             Office.context.mailbox.item.loadCustomPropertiesAsync((result) => {
                 if (result.status === Office.AsyncResultStatus.Succeeded) {
@@ -392,11 +402,14 @@ async function addCustomTag() {
                         selectedTags = JSON.parse(selectedTags);
                     }
 
+                    // Add the new tag to selected tags if not already present
                     if (!selectedTags.some(tag => tag.id === tagObject.id)) {
                         selectedTags.push(tagObject);
                         props.set('selectedTags', JSON.stringify(selectedTags));
                         props.saveAsync(() => {
+                            // After saving, update both displays with the new state
                             updateSelectedTagsDisplay(selectedTags);
+                            displayFilteredTags(availableTags);
                             customTagInput.value = '';
                         });
                     }
