@@ -224,6 +224,11 @@ function displayFilteredTags(tags) {
     return;
   }
 
+  // Sort tags alphabetically by description, ignoring case
+  var sortedTags = _toConsumableArray(tags).sort(function (a, b) {
+    return a.description.toLowerCase().localeCompare(b.description.toLowerCase());
+  });
+
   // Get currently selected tags from custom properties
   Office.context.mailbox.item.loadCustomPropertiesAsync(function (result) {
     if (result.status === Office.AsyncResultStatus.Succeeded) {
@@ -234,7 +239,7 @@ function displayFilteredTags(tags) {
       }
 
       // Create tag list with checked state preserved
-      tagList.innerHTML = tags.map(function (tag) {
+      tagList.innerHTML = sortedTags.map(function (tag) {
         var isChecked = selectedTags.some(function (selectedTag) {
           return selectedTag.id === tag.id;
         });
