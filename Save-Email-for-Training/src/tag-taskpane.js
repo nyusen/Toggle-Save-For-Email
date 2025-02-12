@@ -8,19 +8,42 @@ let availableTags = [];
 // Store the authenticated HTML content
 const authenticatedHTML = `
     <div class="tag-container">
-        <div class="search-container">
-            <input type="text" id="tagSearch" class="search-input" placeholder="Search tags..." oninput="filterTags(this.value)">
+        <div class="section">
+            <h2 class="section-title">All Tags</h2>
+            <div class="search-container">
+                <input type="text" 
+                       id="tagSearch" 
+                       class="search-input" 
+                       placeholder="Search tags..."
+                       oninput="filterTags(this.value)">
+            </div>
+            <div id="tagList" class="tag-list">
+                <!-- Tags will be populated here -->
+            </div>
         </div>
-        <div id="tagList" class="tag-list">
-            <!-- Tags will be dynamically added here -->
+        
+        <div class="section">
+            <h2 class="section-title">Add a Tag</h2>
+            <div class="add-tag-container">
+                <input type="text" 
+                       id="customTagInput" 
+                       class="custom-tag-input" 
+                       placeholder="Enter a custom tag"
+                       oninput="toggleAddButton()">
+                <button id="addTagButton" 
+                        class="add-tag-button" 
+                        onclick="addCustomTag()" 
+                        disabled>Add Tag</button>
+                <div id="tagError" class="tag-error">This tag already exists</div>
+            </div>
         </div>
-        <div class="custom-tag-container">
-            <input type="text" id="customTagInput" class="search-input" placeholder="Add custom tag...">
-            <button onclick="addCustomTag()" class="add-tag-button">Add Tag</button>
+
+        <div class="section">
+            <h2 class="section-title">Selected Tags</h2>
+            <div id="selectedTags" class="selected-tags">
+                <!-- Selected tags will appear here -->
+            </div>
         </div>
-    </div>
-    <div id="selectedTags" class="selected-tags">
-        <!-- Selected tags will be displayed here -->
     </div>
 `;
 
@@ -54,7 +77,7 @@ function initializeUI() {
 }
 
 function showSignInDialog() {
-    Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html', 
+    Office.context.ui.displayDialogAsync('https://localhost:3000/signin-dialog.html', 
         {height: 40, width: 30, displayInIframe: true},
         function (signInResult) {
             if (signInResult.status === Office.AsyncResultStatus.Failed) {
@@ -106,7 +129,7 @@ function handleSignIn() {
         // Generate code challenge
         generateCodeChallenge(codeVerifier).then(codeChallenge => {
             // Build the URL to our local sign-in start page
-            const startUrl = new URL('https://nyusen.github.io/Toggle-Save-For-Email/sign-in-start.html');
+            const startUrl = new URL('https://localhost:3000/sign-in-start.html');
             startUrl.searchParams.append('state', state);
             startUrl.searchParams.append('nonce', nonce);
             startUrl.searchParams.append('code_challenge', codeChallenge);
@@ -175,6 +198,8 @@ function showError(message) {
 
 // Function to fetch tags from the server
 async function loadTags() {
+    showTagListLoading();
+    
     try {
         // Make authenticated request to get tags
         const response = await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag');
@@ -182,7 +207,8 @@ async function loadTags() {
         displayFilteredTags(availableTags);
     } catch (error) {
         console.error('Error loading tags:', error);
-        showError('Failed to load tags');
+        const tagList = document.getElementById('tagList');
+        tagList.innerHTML = '<div class="error-message">Failed to load tags. Please try again later.</div>';
     }
 }
 
@@ -256,9 +282,6 @@ async function makeAuthenticatedRequest(url, options = {}) {
     if (!idToken) {
         throw new Error('No id token available');
     }
-
-    console.log(idToken);
-    console.log(accessToken);
 
     const requestOptions = {
         ...options,
@@ -390,61 +413,133 @@ function loadSelectedTags() {
     });
 }
 
+// Function to normalize tag text for comparison
+function normalizeTagText(text) {
+    return text.toLowerCase().replace(/\s+/g, '');
+}
+
+// Function to show tag error message
+function showTagError(message = 'This tag already exists') {
+    const errorElement = document.getElementById('tagError');
+    errorElement.textContent = message;
+    errorElement.classList.add('visible');
+    setTimeout(() => {
+        errorElement.classList.remove('visible');
+    }, 3000);
+}
+
+// Function to toggle the Add Tag button state
+function toggleAddButton() {
+    const input = document.getElementById('customTagInput');
+    const button = document.getElementById('addTagButton');
+    const errorElement = document.getElementById('tagError');
+    
+    if (input.value.trim() !== '') {
+        button.classList.add('active');
+        button.disabled = false;
+    } else {
+        button.classList.remove('active');
+        button.disabled = true;
+    }
+}
+
+// Function to set button loading state
+function setAddButtonLoading(isLoading) {
+    const button = document.getElementById('addTagButton');
+    const input = document.getElementById('customTagInput');
+    
+    if (isLoading) {
+        button.classList.add('loading');
+        button.disabled = true;
+        input.disabled = true;
+        button.textContent = 'Adding';
+    } else {
+        button.classList.remove('loading');
+        button.textContent = 'Add Tag';
+        input.disabled = false;
+        toggleAddButton(); // This will set the appropriate enabled/disabled state
+    }
+}
+
 // Function to add a custom tag
 async function addCustomTag() {
-    const customTagInput = document.getElementById('customTagInput');
-    const description = customTagInput.value.trim();
+    const input = document.getElementById('customTagInput');
+    const tagName = input.value.trim();
     
-    if (description) {
-        try {
-            // Make API call to get tag ID
-            const response = await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ description })
-            });
+    if (!tagName) {
+        return;
+    }
 
-            if (!response.ok) {
-                throw new Error('Failed to create tag');
-            }
+    // Check if tag already exists
+    const normalizedNewTag = normalizeTagText(tagName);
+    const tagExists = availableTags.some(tag => 
+        normalizeTagText(tag.description) === normalizedNewTag
+    );
 
-            const data = await response.json();
-            const tagObject = {
-                id: data.id,
-                description: description
-            };
+    if (tagExists) {
+        showTagError();
+        return;
+    }
+    
+    setAddButtonLoading(true);
+    
+    try {
+        // Make API call to get tag ID
+        const response = await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ description: tagName })
+        });
 
-            // Add the new tag to availableTags
-            availableTags.push(tagObject);
-
-            // Store the tag object in custom properties
-            Office.context.mailbox.item.loadCustomPropertiesAsync((result) => {
-                if (result.status === Office.AsyncResultStatus.Succeeded) {
-                    const props = result.value;
-                    let selectedTags = props.get('selectedTags') || [];
-                    if (typeof selectedTags === 'string') {
-                        selectedTags = JSON.parse(selectedTags);
-                    }
-
-                    // Add the new tag to selected tags if not already present
-                    if (!selectedTags.some(tag => tag.id === tagObject.id)) {
-                        selectedTags.push(tagObject);
-                        props.set('selectedTags', JSON.stringify(selectedTags));
-                        props.saveAsync(() => {
-                            // After saving, update both displays with the new state
-                            updateSelectedTagsDisplay(selectedTags);
-                            displayFilteredTags(availableTags);
-                            customTagInput.value = '';
-                        });
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error creating tag:', error);
-            // You might want to show an error message to the user here
+        const responseData = await response.json();
+        
+        if (response.status === 400) {
+            showTagError(responseData.detail);
+            setAddButtonLoading(false);
+            return;
         }
+
+        if (!response.ok) {
+            throw new Error('Failed to create tag');
+        }
+
+        const tagObject = {
+            id: responseData.id,
+            description: responseData.description
+        };
+
+        // Add the new tag to availableTags
+        availableTags.push(tagObject);
+
+        // Store the tag object in custom properties
+        Office.context.mailbox.item.loadCustomPropertiesAsync((result) => {
+            if (result.status === Office.AsyncResultStatus.Succeeded) {
+                const props = result.value;
+                let selectedTags = props.get('selectedTags') || [];
+                if (typeof selectedTags === 'string') {
+                    selectedTags = JSON.parse(selectedTags);
+                }
+
+                // Add the new tag to selected tags if not already present
+                if (!selectedTags.some(tag => tag.id === tagObject.id)) {
+                    selectedTags.push(tagObject);
+                    props.set('selectedTags', JSON.stringify(selectedTags));
+                    props.saveAsync(() => {
+                        // After saving, update both displays with the new state
+                        updateSelectedTagsDisplay(selectedTags);
+                        displayFilteredTags(availableTags);
+                        input.value = '';
+                        setAddButtonLoading(false);
+                    });
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error creating tag:', error);
+        setAddButtonLoading(false);
+        showTagError('Failed to create tag. Please try again.');
     }
 }
 
@@ -458,4 +553,10 @@ function updateSelectedTagsDisplay(selectedTags) {
             <span class="remove-tag" onclick="removeTag('${tag.id}')">&times;</span>
         </span>
     `).join('');
+}
+
+// Function to show loading state in tag list
+function showTagListLoading() {
+    const tagList = document.getElementById('tagList');
+    tagList.innerHTML = '<div class="loading-spinner">Loading tags</div>';
 }

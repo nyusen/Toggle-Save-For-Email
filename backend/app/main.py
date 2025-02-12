@@ -204,6 +204,25 @@ async def get_tags(request_metadata: Request, user_claims: dict = Depends(verify
 @app.post("/tag")
 async def create_tag(tag: Tag, request_metadata: Request, user_claims: dict = Depends(verify_user)):
     pool: SqlServerManagerPool = request_metadata.state.pool
+    
+    # Normalize the tag description (remove whitespace and convert to lowercase)
+    normalized_description = "".join(tag.description.lower().split())
+    
+    # Check if a tag with the same normalized description exists
+    check_existing_query = """
+    SELECT COUNT(*) as count
+    FROM ds_experimentation.dbo.training_tag
+    WHERE REPLACE(LOWER(description), ' ', '') = ?
+    """
+    
+    result_df = await pool.select_sql(check_existing_query, [normalized_description])
+    if result_df.iloc[0]['count'] > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="A tag with this name already exists (ignoring case and whitespace)"
+        )
+    
+    # If no duplicate found, proceed with insertion
     insert_tag_query = """
     insert into ds_experimentation.dbo.training_tag (description)
     output inserted.id

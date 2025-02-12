@@ -11,7 +11,7 @@
     <script type="text/javascript">
         const config = {
             clientId: "6d7e781e-9cf5-48ff-8c05-b697ca1a90e3",
-            redirectUri: "https://nyusen.github.io/Toggle-Save-For-Email/auth-callback.html",
+            redirectUri: "https://localhost:3000/auth-callback.html",
             authEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
             tokenEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
             scopes: "openid profile email Mail.Read Mail.Send",
@@ -25,8 +25,14 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             padding: 20px;
         }
-        .tag-container {
-            margin-bottom: 20px;
+        .section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
         }
         .search-container {
             margin-bottom: 10px;
@@ -64,11 +70,48 @@
             flex: 1;
             cursor: pointer;
         }
+        .add-tag-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
         .custom-tag-input {
             width: 100%;
             padding: 8px;
-            margin-bottom: 10px;
             box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .add-tag-button {
+            width: 120px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #cccccc;
+            color: #666666;
+        }
+        .add-tag-button.active {
+            background-color: #0078d4;
+            color: white;
+        }
+        .add-tag-button.active:hover {
+            background-color: #106ebe;
+        }
+        .add-tag-button.loading {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .add-tag-button.loading::after {
+            content: '...';
+            display: inline-block;
+            margin-left: 2px;
         }
         .selected-tags {
             margin-top: 10px;
@@ -93,47 +136,84 @@
             padding: 20px;
             text-align: center;
         }
-        .sign-in-button {
-            background-color: #0078d4;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .sign-in-button:hover {
-            background-color: #106ebe;
-        }
-        /* Add styles for when no results are found */
         .no-results {
             text-align: center;
             padding: 20px;
             color: #666;
         }
+        .tag-error {
+            color: #d83b01;
+            font-size: 12px;
+            margin-top: 4px;
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            height: 0;
+        }
+        .tag-error.visible {
+            opacity: 1;
+            visibility: visible;
+            height: auto;
+        }
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #666666;
+        }
+        .loading-spinner::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #0078d4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="tag-container">
-        <h3>Available Tags</h3>
-        <div class="search-container">
-            <input type="text" 
-                   id="tagSearch" 
-                   class="search-input" 
-                   placeholder="Search tags..."
-                   oninput="filterTags(this.value)">
-        </div>
-        <div id="tagList" class="tag-list">
-            <!-- Tags will be populated here -->
+        <div class="section">
+            <h2 class="section-title">All Tags</h2>
+            <div class="search-container">
+                <input type="text" 
+                       id="tagSearch" 
+                       class="search-input" 
+                       placeholder="Search tags..."
+                       oninput="filterTags(this.value)">
+            </div>
+            <div id="tagList" class="tag-list">
+                <!-- Tags will be populated here -->
+            </div>
         </div>
         
-        <h3>Add Custom Tag</h3>
-        <input type="text" id="customTagInput" class="custom-tag-input" placeholder="Enter a custom tag">
-        <button onclick="addCustomTag()">Add Tag</button>
+        <div class="section">
+            <h2 class="section-title">Add a Tag</h2>
+            <div class="add-tag-container">
+                <input type="text" 
+                       id="customTagInput" 
+                       class="custom-tag-input" 
+                       placeholder="Enter a custom tag"
+                       oninput="toggleAddButton()">
+                <button id="addTagButton" 
+                        class="add-tag-button" 
+                        onclick="addCustomTag()" 
+                        disabled>Add Tag</button>
+            </div>
+        </div>
 
-        <h3>Selected Tags</h3>
-        <div id="selectedTags" class="selected-tags">
-            <!-- Selected tags will appear here -->
+        <div class="section">
+            <h2 class="section-title">Selected Tags</h2>
+            <div id="selectedTags" class="selected-tags">
+                <!-- Selected tags will appear here -->
+            </div>
         </div>
     </div>
 </body>
