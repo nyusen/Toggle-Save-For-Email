@@ -26,7 +26,7 @@ var idToken = null;
 var availableTags = [];
 
 // Store the authenticated HTML content
-var authenticatedHTML = "\n    <div class=\"tag-container\">\n        <div class=\"search-container\">\n            <input type=\"text\" id=\"tagSearch\" class=\"search-input\" placeholder=\"Search tags...\" oninput=\"filterTags(this.value)\">\n        </div>\n        <div id=\"tagList\" class=\"tag-list\">\n            <!-- Tags will be dynamically added here -->\n        </div>\n        <div class=\"custom-tag-container\">\n            <input type=\"text\" id=\"customTagInput\" class=\"search-input\" placeholder=\"Add custom tag...\">\n            <button onclick=\"addCustomTag()\" class=\"add-tag-button\">Add Tag</button>\n        </div>\n    </div>\n    <div id=\"selectedTags\" class=\"selected-tags\">\n        <!-- Selected tags will be displayed here -->\n    </div>\n";
+var authenticatedHTML = "\n    <div class=\"tag-container\">\n        <div class=\"section\">\n            <h2 class=\"section-title\">All Tags</h2>\n            <div class=\"search-container\">\n                <input type=\"text\" \n                       id=\"tagSearch\" \n                       class=\"search-input\" \n                       placeholder=\"Search tags...\"\n                       oninput=\"filterTags(this.value)\">\n            </div>\n            <div id=\"tagList\" class=\"tag-list\">\n                <!-- Tags will be populated here -->\n            </div>\n        </div>\n        \n        <div class=\"section\">\n            <h2 class=\"section-title\">Add a Tag</h2>\n            <div class=\"add-tag-container\">\n                <input type=\"text\" \n                       id=\"customTagInput\" \n                       class=\"custom-tag-input\" \n                       placeholder=\"Enter a custom tag\"\n                       oninput=\"toggleAddButton()\">\n                <button id=\"addTagButton\" \n                        class=\"add-tag-button\" \n                        onclick=\"addCustomTag()\" \n                        disabled>Add Tag</button>\n                <div id=\"tagError\" class=\"tag-error\">This tag already exists</div>\n            </div>\n        </div>\n\n        <div class=\"section\">\n            <h2 class=\"section-title\">Selected Tags</h2>\n            <div id=\"selectedTags\" class=\"selected-tags\">\n                <!-- Selected tags will appear here -->\n            </div>\n        </div>\n    </div>\n";
 Office.onReady(function () {
   // Check if we have tokens in session storage
   accessToken = sessionStorage.getItem('accessToken');
@@ -55,7 +55,7 @@ function initializeUI() {
   }
 }
 function showSignInDialog() {
-  Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html', {
+  Office.context.ui.displayDialogAsync('https://localhost:3000/signin-dialog.html', {
     height: 40,
     width: 30,
     displayInIframe: true
@@ -120,7 +120,7 @@ function handleSignIn() {
     // Generate code challenge
     generateCodeChallenge(codeVerifier).then(function (codeChallenge) {
       // Build the URL to our local sign-in start page
-      var startUrl = new URL('https://nyusen.github.io/Toggle-Save-For-Email/sign-in-start.html');
+      var startUrl = new URL('https://localhost:3000/sign-in-start.html');
       startUrl.searchParams.append('state', state);
       startUrl.searchParams.append('nonce', nonce);
       startUrl.searchParams.append('code_challenge', codeChallenge);
@@ -186,32 +186,34 @@ function loadTags() {
 } // Function to display filtered tags
 function _loadTags() {
   _loadTags = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
-    var response;
+    var response, tagList;
     return _regeneratorRuntime().wrap(function _callee2$(_context2) {
       while (1) switch (_context2.prev = _context2.next) {
         case 0:
-          _context2.prev = 0;
-          _context2.next = 3;
+          showTagListLoading();
+          _context2.prev = 1;
+          _context2.next = 4;
           return makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag');
-        case 3:
+        case 4:
           response = _context2.sent;
-          _context2.next = 6;
+          _context2.next = 7;
           return response.json();
-        case 6:
+        case 7:
           availableTags = _context2.sent;
           displayFilteredTags(availableTags);
-          _context2.next = 14;
+          _context2.next = 16;
           break;
-        case 10:
-          _context2.prev = 10;
-          _context2.t0 = _context2["catch"](0);
+        case 11:
+          _context2.prev = 11;
+          _context2.t0 = _context2["catch"](1);
           console.error('Error loading tags:', _context2.t0);
-          showError('Failed to load tags');
-        case 14:
+          tagList = document.getElementById('tagList');
+          tagList.innerHTML = '<div class="error-message">Failed to load tags. Please try again later.</div>';
+        case 16:
         case "end":
           return _context2.stop();
       }
-    }, _callee2, null, [[0, 10]]);
+    }, _callee2, null, [[1, 11]]);
   }));
   return _loadTags.apply(this, arguments);
 }
@@ -294,16 +296,14 @@ function _makeAuthenticatedRequest() {
           }
           throw new Error('No id token available');
         case 3:
-          console.log(idToken);
-          console.log(accessToken);
           requestOptions = _objectSpread(_objectSpread({}, options), {}, {
             headers: _objectSpread(_objectSpread({}, options.headers), {}, {
               'Authorization': "Bearer ".concat(idToken)
             })
           });
-          _context3.next = 8;
+          _context3.next = 6;
           return fetch(url, requestOptions);
-        case 8:
+        case 6:
           response = _context3.sent;
           if (response.status === 401) {
             // Clear tokens if unauthorized
@@ -313,7 +313,7 @@ function _makeAuthenticatedRequest() {
             idToken = null;
           }
           return _context3.abrupt("return", response);
-        case 11:
+        case 9:
         case "end":
           return _context3.stop();
       }
@@ -441,48 +441,118 @@ function loadSelectedTags() {
   });
 }
 
+// Function to normalize tag text for comparison
+function normalizeTagText(text) {
+  return text.toLowerCase().replace(/\s+/g, '');
+}
+
+// Function to show tag error message
+function showTagError() {
+  var message = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'This tag already exists';
+  var errorElement = document.getElementById('tagError');
+  errorElement.textContent = message;
+  errorElement.classList.add('visible');
+  setTimeout(function () {
+    errorElement.classList.remove('visible');
+  }, 3000);
+}
+
+// Function to toggle the Add Tag button state
+function toggleAddButton() {
+  var input = document.getElementById('customTagInput');
+  var button = document.getElementById('addTagButton');
+  var errorElement = document.getElementById('tagError');
+  if (input.value.trim() !== '') {
+    button.classList.add('active');
+    button.disabled = false;
+  } else {
+    button.classList.remove('active');
+    button.disabled = true;
+  }
+}
+
+// Function to set button loading state
+function setAddButtonLoading(isLoading) {
+  var button = document.getElementById('addTagButton');
+  var input = document.getElementById('customTagInput');
+  if (isLoading) {
+    button.classList.add('loading');
+    button.disabled = true;
+    input.disabled = true;
+    button.textContent = 'Adding';
+  } else {
+    button.classList.remove('loading');
+    button.textContent = 'Add Tag';
+    input.disabled = false;
+    toggleAddButton(); // This will set the appropriate enabled/disabled state
+  }
+}
+
 // Function to add a custom tag
 function addCustomTag() {
   return _addCustomTag.apply(this, arguments);
 } // Function to update the selected tags display
 function _addCustomTag() {
   _addCustomTag = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee5() {
-    var customTagInput, description, response, data, tagObject;
+    var input, tagName, normalizedNewTag, tagExists, response, responseData, tagObject;
     return _regeneratorRuntime().wrap(function _callee5$(_context5) {
       while (1) switch (_context5.prev = _context5.next) {
         case 0:
-          customTagInput = document.getElementById('customTagInput');
-          description = customTagInput.value.trim();
-          if (!description) {
-            _context5.next = 20;
+          input = document.getElementById('customTagInput');
+          tagName = input.value.trim();
+          if (tagName) {
+            _context5.next = 4;
             break;
           }
-          _context5.prev = 3;
-          _context5.next = 6;
+          return _context5.abrupt("return");
+        case 4:
+          // Check if tag already exists
+          normalizedNewTag = normalizeTagText(tagName);
+          tagExists = availableTags.some(function (tag) {
+            return normalizeTagText(tag.description) === normalizedNewTag;
+          });
+          if (!tagExists) {
+            _context5.next = 9;
+            break;
+          }
+          showTagError();
+          return _context5.abrupt("return");
+        case 9:
+          setAddButtonLoading(true);
+          _context5.prev = 10;
+          _context5.next = 13;
           return makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              description: description
+              description: tagName
             })
           });
-        case 6:
+        case 13:
           response = _context5.sent;
+          _context5.next = 16;
+          return response.json();
+        case 16:
+          responseData = _context5.sent;
+          if (!(response.status === 400)) {
+            _context5.next = 21;
+            break;
+          }
+          showTagError(responseData.detail);
+          setAddButtonLoading(false);
+          return _context5.abrupt("return");
+        case 21:
           if (response.ok) {
-            _context5.next = 9;
+            _context5.next = 23;
             break;
           }
           throw new Error('Failed to create tag');
-        case 9:
-          _context5.next = 11;
-          return response.json();
-        case 11:
-          data = _context5.sent;
+        case 23:
           tagObject = {
-            id: data.id,
-            description: description
+            id: responseData.id,
+            description: responseData.description
           }; // Add the new tag to availableTags
           availableTags.push(tagObject);
 
@@ -505,23 +575,25 @@ function _addCustomTag() {
                   // After saving, update both displays with the new state
                   updateSelectedTagsDisplay(selectedTags);
                   displayFilteredTags(availableTags);
-                  customTagInput.value = '';
+                  input.value = '';
+                  setAddButtonLoading(false);
                 });
               }
             }
           });
-          _context5.next = 20;
+          _context5.next = 33;
           break;
-        case 17:
-          _context5.prev = 17;
-          _context5.t0 = _context5["catch"](3);
+        case 28:
+          _context5.prev = 28;
+          _context5.t0 = _context5["catch"](10);
           console.error('Error creating tag:', _context5.t0);
-          // You might want to show an error message to the user here
-        case 20:
+          setAddButtonLoading(false);
+          showTagError('Failed to create tag. Please try again.');
+        case 33:
         case "end":
           return _context5.stop();
       }
-    }, _callee5, null, [[3, 17]]);
+    }, _callee5, null, [[10, 28]]);
   }));
   return _addCustomTag.apply(this, arguments);
 }
@@ -530,6 +602,12 @@ function updateSelectedTagsDisplay(selectedTags) {
   selectedTagsContainer.innerHTML = selectedTags.map(function (tag) {
     return "\n        <span class=\"selected-tag\" data-tag-id=\"".concat(tag.id, "\">\n            ").concat(tag.description, "\n            <span class=\"remove-tag\" onclick=\"removeTag('").concat(tag.id, "')\">&times;</span>\n        </span>\n    ");
   }).join('');
+}
+
+// Function to show loading state in tag list
+function showTagListLoading() {
+  var tagList = document.getElementById('tagList');
+  tagList.innerHTML = '<div class="loading-spinner">Loading tags</div>';
 }
 window.commands = __webpack_exports__;
 /******/ })()
