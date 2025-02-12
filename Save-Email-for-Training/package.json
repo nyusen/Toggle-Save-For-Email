@@ -5,7 +5,7 @@
     "type": "git",
     "url": "https://github.com/OfficeDev/Office-Addin-TaskPane-JS.git"
   },
-  "homepage": "https://localhost:3000",
+  "homepage": "https://nyusen.github.io/Toggle-Save-For-Email",
   "license": "MIT",
   "config": {
     "app_to_debug": "outlook",

@@ -8,8 +8,8 @@ const env = process.env;  // Access environment variables
 
 const dev = env.NODE_ENV === "development";
 
-const urlDev = "https://localhost:3000/";
-const urlProd = "https://localhost:3000/";
+const urlDev = "https://nyusen.github.io/Toggle-Save-For-Email/";
+const urlProd = "https://nyusen.github.io/Toggle-Save-For-Email/";
 
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();
