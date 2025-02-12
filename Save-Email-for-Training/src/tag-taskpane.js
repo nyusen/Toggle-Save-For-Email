@@ -220,6 +220,11 @@ function displayFilteredTags(tags) {
         return;
     }
     
+    // Sort tags alphabetically by description, ignoring case
+    const sortedTags = [...tags].sort((a, b) => 
+        a.description.toLowerCase().localeCompare(b.description.toLowerCase())
+    );
+    
     // Get currently selected tags from custom properties
     Office.context.mailbox.item.loadCustomPropertiesAsync((result) => {
         if (result.status === Office.AsyncResultStatus.Succeeded) {
@@ -230,7 +235,7 @@ function displayFilteredTags(tags) {
             }
             
             // Create tag list with checked state preserved
-            tagList.innerHTML = tags.map(tag => {
+            tagList.innerHTML = sortedTags.map(tag => {
                 const isChecked = selectedTags.some(selectedTag => selectedTag.id === tag.id);
                 return `
                     <div class="tag-item">
