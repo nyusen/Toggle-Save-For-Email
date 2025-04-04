@@ -77,7 +77,7 @@ function initializeUI() {
 }
 
 function showSignInDialog() {
-    Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html', 
+    Office.context.ui.displayDialogAsync('https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/signin-dialog.html', 
         {height: 40, width: 30, displayInIframe: true},
         function (signInResult) {
             if (signInResult.status === Office.AsyncResultStatus.Failed) {
@@ -129,7 +129,7 @@ function handleSignIn() {
         // Generate code challenge
         generateCodeChallenge(codeVerifier).then(codeChallenge => {
             // Build the URL to our local sign-in start page
-            const startUrl = new URL('https://nyusen.github.io/Toggle-Save-For-Email/sign-in-start.html');
+            const startUrl = new URL('https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/sign-in-start.html');
             startUrl.searchParams.append('state', state);
             startUrl.searchParams.append('nonce', nonce);
             startUrl.searchParams.append('code_challenge', codeChallenge);

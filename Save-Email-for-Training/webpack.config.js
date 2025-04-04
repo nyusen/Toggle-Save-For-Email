@@ -8,8 +8,8 @@ const env = process.env;  // Access environment variables
 
 const dev = env.NODE_ENV === "development";
 
-const urlDev = "https://nyusen.github.io/Toggle-Save-For-Email/";
-const urlProd = "https://nyusen.github.io/Toggle-Save-For-Email/";
+const urlDev = "https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/";
+const urlProd = "https://ml-inf-svc-dev.eventellect.com/outlook-save-for-training/";
 
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();
