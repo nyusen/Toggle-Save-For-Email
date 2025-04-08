@@ -23,6 +23,7 @@
     <AppDomain>account.microsoft.com</AppDomain>
     <AppDomain>localhost</AppDomain>
     <AppDomain>nyusen.github.io</AppDomain>
+    <AppDomain>eventellect.github.io</AppDomain>
   </AppDomains>
 
   <Requirements>
@@ -34,13 +35,13 @@
   <FormSettings>
     <Form xsi:type="ItemEdit">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://nyusen.github.io/Toggle-Save-For-Email/commands.html" />
+        <SourceLocation DefaultValue="https://eventellect.github.io/outlook-email-saving/commands.html" />
       </DesktopSettings>
       <TabletSettings>
-        <SourceLocation DefaultValue="https://nyusen.github.io/Toggle-Save-For-Email/commands.html" />
+        <SourceLocation DefaultValue="https://eventellect.github.io/outlook-email-saving/commands.html" />
       </TabletSettings>
       <PhoneSettings>
-        <SourceLocation DefaultValue="https://nyusen.github.io/Toggle-Save-For-Email/commands.html" />
+        <SourceLocation DefaultValue="https://eventellect.github.io/outlook-email-saving/commands.html" />
       </PhoneSettings>
     </Form>
   </FormSettings>
@@ -127,15 +128,15 @@
       </Hosts>
       <Resources>
         <bt:Images>
-          <bt:Image id="icon16" DefaultValue="https://nyusen.github.io/Toggle-Save-For-Email/assets/icon-16.png" />
-          <bt:Image id="icon32" DefaultValue="https://nyusen.github.io/Toggle-Save-For-Email/assets/icon-32.png" />
-          <bt:Image id="icon80" DefaultValue="https://nyusen.github.io/Toggle-Save-For-Email/assets/icon-80.png" />
+          <bt:Image id="icon16" DefaultValue="https://eventellect.github.io/outlook-email-saving/assets/icon-16.png" />
+          <bt:Image id="icon32" DefaultValue="https://eventellect.github.io/outlook-email-saving/assets/icon-32.png" />
+          <bt:Image id="icon80" DefaultValue="https://eventellect.github.io/outlook-email-saving/assets/icon-80.png" />
         </bt:Images>
         <bt:Urls>
           <!-- The JavaScript code is hosted on a secure and trusted web server. -->
-          <bt:Url id="residUILessFunctionFileUrl" DefaultValue="https://nyusen.github.io/Toggle-Save-For-Email/commands.html" />
-          <bt:Url id="residMobileUILessFunctionFileUrl" DefaultValue="https://nyusen.github.io/Toggle-Save-For-Email/commands.html" />
-          <bt:Url id="tagTaskpaneUrl" DefaultValue="https://nyusen.github.io/Toggle-Save-For-Email/tag-taskpane.html" />
+          <bt:Url id="residUILessFunctionFileUrl" DefaultValue="https://eventellect.github.io/outlook-email-saving/commands.html" />
+          <bt:Url id="residMobileUILessFunctionFileUrl" DefaultValue="https://eventellect.github.io/outlook-email-saving/commands.html" />
+          <bt:Url id="tagTaskpaneUrl" DefaultValue="https://eventellect.github.io/outlook-email-saving/tag-taskpane.html" />
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="groupLabel" DefaultValue="Save Options" />

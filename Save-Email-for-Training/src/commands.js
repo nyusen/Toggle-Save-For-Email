@@ -5,7 +5,7 @@
 
 const config = {
     clientId: "6d7e781e-9cf5-48ff-8c05-b697ca1a90e3",
-    redirectUri: "https://nyusen.github.io/Toggle-Save-For-Email/auth-callback.html",
+    redirectUri: "https://eventellect.github.io/outlook-email-saving/auth-callback.html",
     authEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
     tokenEndpoint: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
     scopes: "openid profile email Mail.Read Mail.Send",
@@ -51,7 +51,7 @@ function handleSignIn() {
         // Generate code challenge
         generateCodeChallenge(codeVerifier).then(codeChallenge => {
             // Build the URL to our local sign-in start page
-            const startUrl = new URL('https://nyusen.github.io/Toggle-Save-For-Email/sign-in-start.html');
+            const startUrl = new URL('https://eventellect.github.io/outlook-email-saving/sign-in-start.html');
             startUrl.searchParams.append('state', state);
             startUrl.searchParams.append('nonce', nonce);
             startUrl.searchParams.append('code_challenge', codeChallenge);
@@ -214,7 +214,7 @@ async function validateBody(event) {
             // If "Save and Send" is selected but user is not signed in
             if (!accessToken) {
                 // Show sign-in dialog
-                Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html', 
+                Office.context.ui.displayDialogAsync('https://eventellect.github.io/outlook-email-saving/signin-dialog.html', 
                     {height: 40, width: 30, displayInIframe: true},
                     function (signInResult) {
                         if (signInResult.status === Office.AsyncResultStatus.Failed) {
@@ -292,7 +292,7 @@ async function saveForTraining(event) {
             console.error('Error:', error);
             // Show retry dialog with error message
             const errorMessage = encodeURIComponent(error.message || 'An unknown error occurred');
-            Office.context.ui.displayDialogAsync(`https://nyusen.github.io/Toggle-Save-For-Email/retry-dialog.html?error=${errorMessage}`, 
+            Office.context.ui.displayDialogAsync(`https://eventellect.github.io/outlook-email-saving/retry-dialog.html?error=${errorMessage}`, 
                 {height: 30, width: 20, displayInIframe: true},
                 function (asyncResult) {
                     if (asyncResult.status === Office.AsyncResultStatus.Failed) {
