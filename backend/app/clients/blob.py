@@ -8,9 +8,12 @@ from app.lib.logging_helpers import AppLogger
 
 logger, tracer = AppLogger.get_logger_and_tracer()
 
+
 class BlobClient:
     def __init__(self):
-        self.service_client = BlobServiceClient(account_url=app_settings.blob_url, credential=DefaultAzureCredential())
+        self.service_client = BlobServiceClient(
+            account_url=app_settings.blob_url, credential=DefaultAzureCredential()
+        )
 
     def fetch_blob(
         self,
@@ -21,7 +24,7 @@ class BlobClient:
             container=container_name,
             blob=file_name,
         )
-        logger.debug(f'Fetching {blob_client.url}')
+        logger.debug(f"Fetching {blob_client.url}")
         blob = blob_client.download_blob()
 
         return blob.readall()
@@ -37,5 +40,5 @@ class BlobClient:
             blob=file_name,
         )
         blob_client.upload_blob(data, overwrite=True)
-        file_extension = Path(file_name).suffix.replace('.', '').upper()
-        logger.info(f'{file_extension} saved to {blob_client.url}')
+        file_extension = Path(file_name).suffix.replace(".", "").upper()
+        logger.info(f"{file_extension} saved to {blob_client.url}")

@@ -108,7 +108,7 @@ class SqlServerManagerPool:
             except Exception as e:
                 if num_attempts < max_attempts:
                     logger.error(
-                        f"Failed to acquire connection. Refreshing tokens. Attempt {num_attempts+1} of {max_attempts}. Exception: {e}"
+                        f"Failed to acquire connection. Refreshing tokens. Attempt {num_attempts + 1} of {max_attempts}. Exception: {e}"
                     )
                     self.update_pool_token()
                     num_attempts += 1
@@ -188,19 +188,19 @@ class SqlServerManagerPool:
         async with self.get_conn() as conn:
             async with self.get_cur(conn) as c:
                 try:
-                    logger.debug(f'Executing \n{query}')
-                    await c.executemany(query,params)
+                    logger.debug(f"Executing \n{query}")
+                    await c.executemany(query, params)
                     if output:
                         new_id = await c.fetchone()
                         await conn.commit()
-                        logger.info('Committing Transaction.')
+                        logger.info("Committing Transaction.")
                         return new_id[0] if new_id else None
-                    await conn.commit()            
-                    logger.info('Committing Transaction.')
+                    await conn.commit()
+                    logger.info("Committing Transaction.")
                 except Exception as e:
                     await conn.rollback()
                     logger.error(e)
-                    logger.error('Failed to execute insert query. Rolling back.')
+                    logger.error("Failed to execute insert query. Rolling back.")
 
     async def insert_dynamic_sql(
         self, query: str, query_values: list[tuple], output: bool = False

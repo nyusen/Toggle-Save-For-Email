@@ -28,43 +28,53 @@ load_dotenv()
 logger, tracer = AppLogger.get_logger_and_tracer()
 
 
-
 CLIENT_ID = "6d7e781e-9cf5-48ff-8c05-b697ca1a90e3"
 JWKS_URL = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
 
 security = HTTPBearer()
+
 
 def make_middleware() -> List[Middleware]:
     middleware = [
         # Configure CORS
         Middleware(
             CORSMiddleware,
-            allow_origins=['*'],
-            allow_methods=['*'],
-            allow_headers=['*'],
+            allow_origins=["*"],
+            allow_methods=["*"],
+            allow_headers=["*"],
         ),
     ]
     return middleware
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info('Starting instance.')
-    logger.info('Creating connection pool.')
-    pool = SqlServerManagerPool(env=app_settings.env, odbc_version=app_settings.sql_server_settings.odbc_version)
+    logger.info("Starting instance.")
+    logger.info("Creating connection pool.")
+    pool = SqlServerManagerPool(
+        env=app_settings.env, odbc_version=app_settings.sql_server_settings.odbc_version
+    )
     await pool.get_pool()
-    yield {'pool': pool}
-    logger.info('Closing connection pool.')
+    yield {"pool": pool}
+    logger.info("Closing connection pool.")
     await pool.close()
-    logger.info('Shutting down instance.')
+    logger.info("Shutting down instance.")
+
 
 def create_app() -> FastAPI:
-    app_ = FastAPI(title="Email Training Saver API", middleware=make_middleware(), lifespan=lifespan)
+    app_ = FastAPI(
+        title="Email Training Saver API",
+        middleware=make_middleware(),
+        lifespan=lifespan,
+    )
     return app_
+
 
 app = create_app()
 
 # Initialize the BlobServiceClient
 blob_client = BlobClient()
+
 
 class EmailData(BaseModel):
     subject: str
@@ -74,8 +84,10 @@ class EmailData(BaseModel):
     tags: List[int]
     timestamp: str
 
+
 class Tag(BaseModel):
     description: str
+
 
 class EmailFilter(BaseModel):
     sender: Optional[str] = None
@@ -85,6 +97,7 @@ class EmailFilter(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
 
+
 def get_ms_public_keys():
     """Fetch Microsoft's public keys for token validation"""
     try:
@@ -92,30 +105,35 @@ def get_ms_public_keys():
         return jwks
     except Exception as e:
         logger.error(f"Error fetching Microsoft public keys: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch Microsoft public keys")
+        raise HTTPException(
+            status_code=500, detail="Failed to fetch Microsoft public keys"
+        )
+
 
 def validate_token(token: str) -> dict:
     """Validate the Exchange identity token against Microsoft's public keys"""
     try:
         # Decode the token header without verification
         header = jwt.get_unverified_header(token)
-        kid = header.get('kid')
-        
+        kid = header.get("kid")
+
         if not kid:
             logger.error("Token validation failed: No key ID in token header")
             raise HTTPException(status_code=401, detail="Invalid token: No key ID")
-        
+
         # Get the matching public key
         jwks = get_ms_public_keys()
-        matching_key = next((k for k in jwks["keys"] if k['kid'] == kid), None)
-        
+        matching_key = next((k for k in jwks["keys"] if k["kid"] == kid), None)
+
         if not matching_key:
-            logger.error(f"Token validation failed: No matching key found for kid {kid}")
+            logger.error(
+                f"Token validation failed: No matching key found for kid {kid}"
+            )
             raise HTTPException(status_code=401, detail="Invalid token: Key not found")
 
         # Convert the JWK to PEM format
         public_key = RSAAlgorithm.from_jwk(matching_key)
-        
+
         try:
             decoded_token = jwt.decode(
                 token,
@@ -125,7 +143,7 @@ def validate_token(token: str) -> dict:
             )
             logger.info("Token successfully validated")
             return decoded_token
-            
+
         except jwt.ExpiredSignatureError:
             logger.error("Token validation failed: Token has expired")
             raise HTTPException(status_code=401, detail="Token has expired")
@@ -135,10 +153,11 @@ def validate_token(token: str) -> dict:
         except jwt.InvalidTokenError as e:
             logger.error(f"Token validation failed: {str(e)}")
             raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
-            
+
     except Exception as e:
         logger.error(f"Unexpected error during token validation: {str(e)}")
         raise HTTPException(status_code=401, detail="Token validation failed")
+
 
 async def verify_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Dependency to validate token and return user claims"""
@@ -148,46 +167,65 @@ async def verify_user(credentials: HTTPAuthorizationCredentials = Depends(securi
     #     raise HTTPException(status_code=403, detail="User not authorized to access this API")
     return claims
 
+
 async def persist_email_data(email_data: EmailData, request_metadata: Request):
     email_uuid = uuid4()
 
     try:
         # Save email data to sql server
         pool: SqlServerManagerPool = request_metadata.state.pool
-        
+
         insert_email_query = """
         insert into ds_experimentation.dbo.training_email (uuid, sender, recipients, subject)
         output inserted.id
         values (?, ?, ?, ?)
         """
-        email_id = await pool.insert_sql(insert_email_query, [(email_uuid, email_data.sender, ",".join(email_data.recipients), email_data.subject)], output=True)
+        email_id = await pool.insert_sql(
+            insert_email_query,
+            [
+                (
+                    email_uuid,
+                    email_data.sender,
+                    ",".join(email_data.recipients),
+                    email_data.subject,
+                )
+            ],
+            output=True,
+        )
 
         if email_data.tags:
             insert_tag_query = """
             insert into ds_experimentation.dbo.training_email_tag (email_id, tag_id)
             values (?, ?)
             """
-            await pool.insert_sql(insert_tag_query, [(email_id, tag) for tag in email_data.tags])
+            await pool.insert_sql(
+                insert_tag_query, [(email_id, tag) for tag in email_data.tags]
+            )
 
         # Save email to blob
         # Create a unique filename using timestamp and user info
         filename = f"{email_uuid}.json"
-        
+
         # Add user information to the saved data
         email_data_dict = email_data.model_dump()
-        
+
         # Convert email data to JSON string
         email_json = json.dumps(email_data_dict)
-        
+
         # Upload to blob storage
-        blob_client.save_to_blob(data=email_json, file_name=filename, container_name=app_settings.container_name)
+        blob_client.save_to_blob(
+            data=email_json,
+            file_name=filename,
+            container_name=app_settings.container_name,
+        )
 
         logger.info(f"Successfully saved file to blob storage: {filename}")
         return {"message": "Email saved successfully", "filename": filename}
-    
+
     except Exception as e:
         logger.error(f"Failed to save email data to sql server: {str(e)}")
         raise
+
 
 @app.get("/tag")
 async def get_tags(request_metadata: Request, user_claims: dict = Depends(verify_user)):
@@ -196,32 +234,34 @@ async def get_tags(request_metadata: Request, user_claims: dict = Depends(verify
     select * from ds_experimentation.dbo.training_tag
     """
     tag_df: pd.DataFrame = await pool.select_sql(tag_select_query, ())
-    tag_records = tag_df.to_dict(orient='records')
+    tag_records = tag_df.to_dict(orient="records")
 
     return JSONResponse(content=tag_records, media_type="application/json")
-    
+
 
 @app.post("/tag")
-async def create_tag(tag: Tag, request_metadata: Request, user_claims: dict = Depends(verify_user)):
+async def create_tag(
+    tag: Tag, request_metadata: Request, user_claims: dict = Depends(verify_user)
+):
     pool: SqlServerManagerPool = request_metadata.state.pool
-    
+
     # Normalize the tag description (remove whitespace and convert to lowercase)
     normalized_description = "".join(tag.description.lower().split())
-    
+
     # Check if a tag with the same normalized description exists
     check_existing_query = """
     SELECT COUNT(*) as count
     FROM ds_experimentation.dbo.training_tag
     WHERE REPLACE(LOWER(description), ' ', '') = ?
     """
-    
+
     result_df = await pool.select_sql(check_existing_query, [normalized_description])
-    if result_df.iloc[0]['count'] > 0:
+    if result_df.iloc[0]["count"] > 0:
         raise HTTPException(
             status_code=400,
-            detail="A tag with this name already exists (ignoring case and whitespace)"
+            detail="A tag with this name already exists (ignoring case and whitespace)",
         )
-    
+
     # If no duplicate found, proceed with insertion
     insert_tag_query = """
     insert into ds_experimentation.dbo.training_tag (description)
@@ -229,16 +269,22 @@ async def create_tag(tag: Tag, request_metadata: Request, user_claims: dict = De
     values (?)
     """
 
-    inserted_id = await pool.insert_sql(insert_tag_query, [(tag.description,)], output=True)
+    inserted_id = await pool.insert_sql(
+        insert_tag_query, [(tag.description,)], output=True
+    )
     logger.info(f"Inserted tag with ID: {inserted_id}")
-    return JSONResponse(content={"id": inserted_id, "description": tag.description}, media_type="application/json")
-    
+    return JSONResponse(
+        content={"id": inserted_id, "description": tag.description},
+        media_type="application/json",
+    )
+
+
 @app.post("/save-email")
 async def save_email(
     email_data: EmailData,
     request_metadata: Request,
     background_tasks: BackgroundTasks,
-    user_claims: dict = Depends(verify_user)
+    user_claims: dict = Depends(verify_user),
 ):
     background_tasks.add_task(persist_email_data, email_data, request_metadata)
     return JSONResponse(
@@ -246,74 +292,70 @@ async def save_email(
         content={"message": "Email is saving to blob"},
     )
 
+
 @app.post("/emails/filter")
 async def filter_emails(
     filter_params: EmailFilter,
     request_metadata: Request,
-    user_claims: dict = Depends(verify_user)
+    user_claims: dict = Depends(verify_user),
 ) -> List[dict]:
     try:
         pool: SqlServerManagerPool = request_metadata.state.pool
-        
+
         # Start building the query
         query = """
         SELECT DISTINCT e.id, e.uuid, e.sender, e.recipients, e.subject
         FROM ds_experimentation.dbo.training_email e
         """
-        
+
         # Add tag join if needed
         if filter_params.tags:
             query += """
             INNER JOIN ds_experimentation.dbo.training_email_tag et ON e.id = et.email_id
             """
-        
+
         # Build WHERE clause
         conditions = []
         params = []
-        
+
         if filter_params.sender:
             conditions.append("e.sender LIKE ?")
             params.append(f"%{filter_params.sender}%")
-            
+
         if filter_params.subject_contains:
             conditions.append("e.subject LIKE ?")
             params.append(f"%{filter_params.subject_contains}%")
-            
+
         if filter_params.recipients_contains:
             conditions.append("e.recipients LIKE ?")
             params.append(f"%{filter_params.recipients_contains}%")
-            
+
         if filter_params.tags:
-            placeholders = ','.join(['?' for _ in filter_params.tags])
+            placeholders = ",".join(["?" for _ in filter_params.tags])
             conditions.append(f"et.tag_id IN ({placeholders})")
             params.extend(filter_params.tags)
-            
+
         if filter_params.start_date:
             conditions.append("e.timestamp >= ?")
             params.append(filter_params.start_date)
-            
+
         if filter_params.end_date:
             conditions.append("e.timestamp <= ?")
             params.append(filter_params.end_date)
-            
+
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-            
+
         # Execute query
         df = await pool.select_sql(query, params)
-        results = df.to_dict(orient='records')
-        
-        return JSONResponse(
-            content=results,
-            media_type="application/json"
-        )
-        
+        results = df.to_dict(orient="records")
+
+        return JSONResponse(content=results, media_type="application/json")
+
     except Exception as e:
         logger.error(f"Error filtering emails: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error filtering emails: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error filtering emails: {str(e)}")
+
 
 @app.get("/health")
 async def health_check():
