@@ -23,6 +23,7 @@
     <AppDomain>account.microsoft.com</AppDomain>
     <AppDomain>localhost</AppDomain>
     <AppDomain>nyusen.github.io</AppDomain>
+    <AppDomain>eventellect.github.io</AppDomain>
   </AppDomains>
 
   <Requirements>
