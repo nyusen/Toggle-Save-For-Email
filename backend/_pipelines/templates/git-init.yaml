@@ -1,9 +1,0 @@
-steps:
-  - task: bash@3
-    displayName: 'Init Git'
-    continueOnError: false
-    inputs:
-      targetType: 'inline'
-      script: |
-        git config --global user.email "az@eventellect.com"
-        git config --global user.name "Azure Devops Pipeline"
