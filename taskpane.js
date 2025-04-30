@@ -193,7 +193,7 @@ function _loadTags() {
           showTagListLoading();
           _context2.prev = 1;
           _context2.next = 4;
-          return makeAuthenticatedRequest('https://ml-inf-svc-prd.eventellect.com/corpus-collector/api/metadata/tags');
+          return makeAuthenticatedRequest('https://ml-inf-svc-prd.eventellect.com/corpus-collector/api/metadata/tags/');
         case 4:
           response = _context2.sent;
           _context2.next = 7;
