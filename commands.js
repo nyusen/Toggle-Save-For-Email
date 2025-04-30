@@ -427,7 +427,7 @@ function _saveForTraining() {
                       timestamp: new Date().toISOString()
                     }; // Make authenticated request to your server
                     _context7.next = 14;
-                    return makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/save-email', {
+                    return makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/email', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json'

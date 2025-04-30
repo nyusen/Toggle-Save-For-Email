@@ -193,7 +193,7 @@ function _loadTags() {
           showTagListLoading();
           _context2.prev = 1;
           _context2.next = 4;
-          return makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag');
+          return makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/metadata/tags');
         case 4:
           response = _context2.sent;
           _context2.next = 7;
@@ -526,7 +526,7 @@ function _addCustomTag() {
           setAddButtonLoading(true);
           _context5.prev = 10;
           _context5.next = 13;
-          return makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag', {
+          return makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/metadata/tags', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
