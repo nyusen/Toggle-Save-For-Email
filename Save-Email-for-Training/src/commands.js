@@ -279,7 +279,7 @@ async function saveForTraining(event) {
             };
 
             // Make authenticated request to your server
-            await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/email', {
+            await makeAuthenticatedRequest('https://ml-inf-svc-prd.eventellect.com/corpus-collector/api/email', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
