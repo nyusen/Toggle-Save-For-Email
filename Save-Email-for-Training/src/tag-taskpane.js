@@ -202,7 +202,7 @@ async function loadTags() {
 
     try {
         // Make authenticated request to get tags
-        const response = await makeAuthenticatedRequest('https://ml-inf-svc-prd.eventellect.com/corpus-collector/api/metadata/tags');
+        const response = await makeAuthenticatedRequest('https://ml-inf-svc-prd.eventellect.com/corpus-collector/api/metadata/tags/');
         availableTags = await response.json();
         displayFilteredTags(availableTags);
     } catch (error) {
