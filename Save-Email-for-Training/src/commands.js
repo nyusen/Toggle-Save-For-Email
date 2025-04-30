@@ -24,7 +24,7 @@ Office.onReady(async (info) => {
         // Check if we have tokens in session storage
         accessToken = sessionStorage.getItem('accessToken');
         idToken = sessionStorage.getItem('idToken');
-        
+
         if (accessToken) {
             updateUI(true);
         } else {
@@ -43,7 +43,7 @@ function handleSignIn() {
         const state = generateRandomString(32);
         const codeVerifier = generateRandomString(64);
         const nonce = generateRandomString(16);
-        
+
         // Store state and code verifier in parent window's session storage
         window.sessionStorage.setItem('authState', state);
         window.sessionStorage.setItem('codeVerifier', codeVerifier);
@@ -57,13 +57,13 @@ function handleSignIn() {
             startUrl.searchParams.append('code_challenge', codeChallenge);
             startUrl.searchParams.append('code_challenge_method', 'S256');
             startUrl.searchParams.append('code_verifier', codeVerifier);
-            
+
             // Add delay before opening the auth dialog
             setTimeout(() => {
                 // Open our local page in a dialog, which will then redirect to Microsoft
-                Office.context.ui.displayDialogAsync(startUrl.toString(), 
-                    {height: 60, width: 30}, 
-                    function(result) {
+                Office.context.ui.displayDialogAsync(startUrl.toString(),
+                    { height: 60, width: 30 },
+                    function (result) {
                         if (result.status === Office.AsyncResultStatus.Failed) {
                             console.error(result.error.message);
                             reject(new Error(result.error.message));
@@ -71,7 +71,7 @@ function handleSignIn() {
                         }
 
                         const dialog = result.value;
-                        dialog.addEventHandler(Office.EventType.DialogMessageReceived, function(arg) {
+                        dialog.addEventHandler(Office.EventType.DialogMessageReceived, function (arg) {
                             try {
                                 const message = JSON.parse(arg.message);
                                 if (message.type === 'token') {
@@ -95,7 +95,7 @@ function handleSignIn() {
                             }
                         });
 
-                        dialog.addEventHandler(Office.EventType.DialogEventReceived, function(arg) {
+                        dialog.addEventHandler(Office.EventType.DialogEventReceived, function (arg) {
                             dialog.close();
                             reject(new Error('Dialog closed'));
                         });
@@ -204,7 +204,7 @@ async function validateBody(event) {
             if (shouldSave === undefined) {
                 event.completed({ allowEvent: true })
             }
-            
+
             if (!shouldSave) {
                 // If "Send Only" is selected, just send the email
                 event.completed({ allowEvent: true });
@@ -214,8 +214,8 @@ async function validateBody(event) {
             // If "Save and Send" is selected but user is not signed in
             if (!accessToken) {
                 // Show sign-in dialog
-                Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html', 
-                    {height: 40, width: 30, displayInIframe: true},
+                Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html',
+                    { height: 40, width: 30, displayInIframe: true },
                     function (signInResult) {
                         if (signInResult.status === Office.AsyncResultStatus.Failed) {
                             console.error(signInResult.error.message);
@@ -239,14 +239,14 @@ async function validateBody(event) {
                                 // User doesn't want to sign in
                                 signInDialog.close();
                                 event.completed({ allowEvent: false });
-            }
+                            }
                         });
                     }
                 );
-        } else {
+            } else {
                 // User is already signed in and wants to save, proceed with saving
                 await saveForTraining(event);
-        }
+            }
         });
     } catch (error) {
         console.error('Error in validateBody:', error);
@@ -268,7 +268,7 @@ async function saveForTraining(event) {
                 new Promise((resolve) => item.from.getAsync(resolve)),
                 new Promise((resolve) => item.to.getAsync(resolve)),
             ]);
-            
+
             const emailData = {
                 subject: subject.value,
                 body: body.value,
@@ -277,30 +277,30 @@ async function saveForTraining(event) {
                 tags: tags.map(tag => tag.id),
                 timestamp: new Date().toISOString(),
             };
-        
+
             // Make authenticated request to your server
-            await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/save-email', {
+            await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/email', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(emailData)
             });
-    
+
             event.completed({ allowEvent: true });
         } catch (error) {
             console.error('Error:', error);
             // Show retry dialog with error message
             const errorMessage = encodeURIComponent(error.message || 'An unknown error occurred');
-            Office.context.ui.displayDialogAsync(`https://nyusen.github.io/Toggle-Save-For-Email/retry-dialog.html?error=${errorMessage}`, 
-                {height: 30, width: 20, displayInIframe: true},
+            Office.context.ui.displayDialogAsync(`https://nyusen.github.io/Toggle-Save-For-Email/retry-dialog.html?error=${errorMessage}`,
+                { height: 30, width: 20, displayInIframe: true },
                 function (asyncResult) {
                     if (asyncResult.status === Office.AsyncResultStatus.Failed) {
                         console.error(asyncResult.error.message);
                         event.completed({ allowEvent: false });
                         return;
                     }
-                    
+
                     const dialog = asyncResult.value;
                     dialog.addEventHandler(Office.EventType.DialogMessageReceived, function (arg) {
                         dialog.close();

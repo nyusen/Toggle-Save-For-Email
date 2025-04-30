@@ -77,8 +77,8 @@ function initializeUI() {
 }
 
 function showSignInDialog() {
-    Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html', 
-        {height: 40, width: 30, displayInIframe: true},
+    Office.context.ui.displayDialogAsync('https://nyusen.github.io/Toggle-Save-For-Email/signin-dialog.html',
+        { height: 40, width: 30, displayInIframe: true },
         function (signInResult) {
             if (signInResult.status === Office.AsyncResultStatus.Failed) {
                 console.error(signInResult.error.message);
@@ -121,7 +121,7 @@ function handleSignIn() {
         const state = generateRandomString(32);
         const codeVerifier = generateRandomString(64);
         const nonce = generateRandomString(16);
-        
+
         // Store state and code verifier in parent window's session storage
         window.sessionStorage.setItem('authState', state);
         window.sessionStorage.setItem('codeVerifier', codeVerifier);
@@ -135,13 +135,13 @@ function handleSignIn() {
             startUrl.searchParams.append('code_challenge', codeChallenge);
             startUrl.searchParams.append('code_challenge_method', 'S256');
             startUrl.searchParams.append('code_verifier', codeVerifier);
-            
+
             // Add delay before opening the auth dialog
             setTimeout(() => {
                 // Open our local page in a dialog, which will then redirect to Microsoft
-                Office.context.ui.displayDialogAsync(startUrl.toString(), 
-                    {height: 60, width: 30}, 
-                    function(result) {
+                Office.context.ui.displayDialogAsync(startUrl.toString(),
+                    { height: 60, width: 30 },
+                    function (result) {
                         if (result.status === Office.AsyncResultStatus.Failed) {
                             console.error(result.error.message);
                             reject(new Error(result.error.message));
@@ -149,7 +149,7 @@ function handleSignIn() {
                         }
 
                         const dialog = result.value;
-                        dialog.addEventHandler(Office.EventType.DialogMessageReceived, function(arg) {
+                        dialog.addEventHandler(Office.EventType.DialogMessageReceived, function (arg) {
                             try {
                                 const message = JSON.parse(arg.message);
                                 if (message.type === 'token') {
@@ -172,7 +172,7 @@ function handleSignIn() {
                             }
                         });
 
-                        dialog.addEventHandler(Office.EventType.DialogEventReceived, function(arg) {
+                        dialog.addEventHandler(Office.EventType.DialogEventReceived, function (arg) {
                             dialog.close();
                             reject(new Error('Dialog closed'));
                         });
@@ -199,10 +199,10 @@ function showError(message) {
 // Function to fetch tags from the server
 async function loadTags() {
     showTagListLoading();
-    
+
     try {
         // Make authenticated request to get tags
-        const response = await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag');
+        const response = await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/metadata/tags');
         availableTags = await response.json();
         displayFilteredTags(availableTags);
     } catch (error) {
@@ -219,12 +219,12 @@ function displayFilteredTags(tags) {
         tagList.innerHTML = '<div class="no-results">No matching tags found</div>';
         return;
     }
-    
+
     // Sort tags alphabetically by description, ignoring case
-    const sortedTags = [...tags].sort((a, b) => 
+    const sortedTags = [...tags].sort((a, b) =>
         a.description.toLowerCase().localeCompare(b.description.toLowerCase())
     );
-    
+
     // Get currently selected tags from custom properties
     Office.context.mailbox.item.loadCustomPropertiesAsync((result) => {
         if (result.status === Office.AsyncResultStatus.Succeeded) {
@@ -233,7 +233,7 @@ function displayFilteredTags(tags) {
             if (typeof selectedTags === 'string') {
                 selectedTags = JSON.parse(selectedTags);
             }
-            
+
             // Create tag list with checked state preserved
             tagList.innerHTML = sortedTags.map(tag => {
                 const isChecked = selectedTags.some(selectedTag => selectedTag.id === tag.id);
@@ -252,15 +252,15 @@ function displayFilteredTags(tags) {
 // Function to filter tags based on search input
 function filterTags(searchText) {
     if (!availableTags) return;
-    
+
     const searchLower = searchText.toLowerCase().trim();
-    const filteredTags = searchLower === '' 
-        ? availableTags 
-        : availableTags.filter(tag => 
+    const filteredTags = searchLower === ''
+        ? availableTags
+        : availableTags.filter(tag =>
             tag.description.toLowerCase().includes(searchLower));
-    
+
     displayFilteredTags(filteredTags);
-    
+
     // Restore checked state for selected tags
     const selectedTags = getSelectedTags();
     selectedTags.forEach(tag => {
@@ -297,7 +297,7 @@ async function makeAuthenticatedRequest(url, options = {}) {
     };
 
     const response = await fetch(url, requestOptions);
-    
+
     if (response.status === 401) {
         // Clear tokens if unauthorized
         sessionStorage.removeItem('accessToken');
@@ -305,7 +305,7 @@ async function makeAuthenticatedRequest(url, options = {}) {
         accessToken = null;
         idToken = null;
     }
-    
+
     return response;
 }
 
@@ -334,7 +334,7 @@ function base64URLEncode(buffer) {
 function handleTagSelection(checkbox) {
     const tagId = parseInt(checkbox.value);
     const selectedTagsContainer = document.getElementById('selectedTags');
-    
+
     if (checkbox.checked) {
         // Find the tag object from availableTags
         const selectedTag = availableTags.find(tag => tag.id === tagId);
@@ -357,7 +357,7 @@ function handleTagSelection(checkbox) {
             existingTag.remove();
         }
     }
-    
+
     // Save selected tags to custom properties
     saveSelectedTags();
 }
@@ -369,14 +369,14 @@ function removeTag(tagId) {
     if (checkbox) {
         checkbox.checked = false;
     }
-    
+
     // Remove the tag from selected tags
     const selectedTagsContainer = document.getElementById('selectedTags');
     const existingTag = selectedTagsContainer.querySelector(`[data-tag-id="${tagId}"]`);
     if (existingTag) {
         existingTag.remove();
     }
-    
+
     // Save selected tags to custom properties
     saveSelectedTags();
 }
@@ -438,7 +438,7 @@ function toggleAddButton() {
     const input = document.getElementById('customTagInput');
     const button = document.getElementById('addTagButton');
     const errorElement = document.getElementById('tagError');
-    
+
     if (input.value.trim() !== '') {
         button.classList.add('active');
         button.disabled = false;
@@ -452,7 +452,7 @@ function toggleAddButton() {
 function setAddButtonLoading(isLoading) {
     const button = document.getElementById('addTagButton');
     const input = document.getElementById('customTagInput');
-    
+
     if (isLoading) {
         button.classList.add('loading');
         button.disabled = true;
@@ -470,14 +470,14 @@ function setAddButtonLoading(isLoading) {
 async function addCustomTag() {
     const input = document.getElementById('customTagInput');
     const tagName = input.value.trim();
-    
+
     if (!tagName) {
         return;
     }
 
     // Check if tag already exists
     const normalizedNewTag = normalizeTagText(tagName);
-    const tagExists = availableTags.some(tag => 
+    const tagExists = availableTags.some(tag =>
         normalizeTagText(tag.description) === normalizedNewTag
     );
 
@@ -485,12 +485,12 @@ async function addCustomTag() {
         showTagError();
         return;
     }
-    
+
     setAddButtonLoading(true);
-    
+
     try {
         // Make API call to get tag ID
-        const response = await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/tag', {
+        const response = await makeAuthenticatedRequest('https://ml-inf-svc-dev.eventellect.com/corpus-collector/api/metadata/tags', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -499,7 +499,7 @@ async function addCustomTag() {
         });
 
         const responseData = await response.json();
-        
+
         if (response.status === 400) {
             showTagError(responseData.detail);
             setAddButtonLoading(false);
@@ -551,7 +551,7 @@ async function addCustomTag() {
 // Function to update the selected tags display
 function updateSelectedTagsDisplay(selectedTags) {
     const selectedTagsContainer = document.getElementById('selectedTags');
-    
+
     selectedTagsContainer.innerHTML = selectedTags.map(tag => `
         <span class="selected-tag" data-tag-id="${tag.id}">
             ${tag.description}
